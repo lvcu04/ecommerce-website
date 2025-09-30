@@ -8,8 +8,7 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --font-sans: var(--font-nunito), sans-serif;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -22,5 +21,45 @@
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-sans);
+}
+
+
+/* Text */
+.half-text {
+
+  font-weight: bold;
+  background: linear-gradient(to right, red 50%, blue 50%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+
+/* Hiệu ứng lướt lên ở header */
+@keyframes slideUp {
+  /* Bắt đầu: Chữ ở dưới và trong suốt */
+  0% {
+    opacity: 0;
+    transform: translateY(100%);
+  }
+  /* Hiện ra: Chữ trượt vào vị trí và hiện rõ */
+  15% {
+    opacity: 1;
+    transform: translateY(0%);
+  }
+  /* Giữ nguyên: Chữ đứng yên */
+  85% {
+    opacity: 1;
+    transform: translateY(0%);
+  }
+  /* Biến mất: Chữ trượt lên trên và mờ dần */
+  100% {
+    opacity: 0;
+    transform: translateY(-100%);
+  }
+}
+
+.animate-slide-up {
+  /* Thời gian animation phải khớp với interval trong component */
+  animation: slideUp 5s ease-in-out infinite;
 }

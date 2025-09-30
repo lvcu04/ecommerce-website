@@ -1,0 +1,16 @@
+# Thư mục node_modules
+node_modules/
+
+# File build/dist
+build/
+dist/
+
+# File log
+*.log
+
+# File môi trường
+.env
+
+# Báo cáo / tạm
+report/
+tmp/
