@@ -14,3 +14,6 @@ dist/
 # Báo cáo / tạm
 report/
 tmp/
+
+# Prisma
+prisma/seed.ts
