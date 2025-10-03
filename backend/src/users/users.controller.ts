@@ -6,6 +6,13 @@ import { UsersService } from './users.service';
 export class UsersController {
   constructor(private usersService: UsersService) {}
 
+  // @UseGuards(JwtAuthGuard, RolesGuard)
+  // @Roles(Role.Admin)
+  @Get()
+  getAllUsers() {
+    return this.usersService.findAll(); 
+  }
+
   @UseGuards(JwtAuthGuard)
   @Get('me')
   async me(@Request() req) {
