@@ -102,7 +102,16 @@ const Header = () => {
             )}
           </button>
         </div>
+        
       </div>
+
+      <div className="flex flex-wrap justify-center md:justify-between items-center gap-2 px-4 md:px-8 lg:px-16 bg-[#f4f2e9] text-[#515151] h-auto text-sm py-2">
+        <p>Miễn phí giao hàng đơn từ 699k</p>
+        <p>Miễn phí đổi trả đến 30 ngày</p>
+        <p>Cam kết 100% chính hãng</p>
+        <p>Đăng ký nhận ngay 150k</p>
+      </div>
+
       
       {/* Mobile Menu */}
       {isMenuOpen && (

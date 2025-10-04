@@ -16,4 +16,6 @@ report/
 tmp/
 
 # Prisma
-prisma/seed.ts
+prisma/seed
+
+backend/prisma/seed.ts
