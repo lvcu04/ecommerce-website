@@ -12,8 +12,8 @@ export class ProductsController {
   constructor(private productsService: ProductsService) {}
 
   @Get()
-  findAll(@Query('page') page = '1') {
-    return this.productsService.findAll(Number(page));
+  findAll(@Query('page') page = '1', @Query('category') category?: string) { // highlight-line
+    return this.productsService.findAll(Number(page), 12, category); // highlight-line
   }
 
   @Get(':id')
