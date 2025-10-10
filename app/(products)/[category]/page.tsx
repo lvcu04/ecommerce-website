@@ -35,10 +35,10 @@ export default function ProductPage() {
 
     const token = localStorage.getItem('accessToken');
     
-    if (!token) {
-      router.push('/login');
-      return;
-    }
+    // if (!token) {
+    //   router.push('/login');
+    //   return;
+    // }
     
     if (!categoryName) {
       setIsLoading(false);
@@ -55,15 +55,16 @@ export default function ProductPage() {
           },
         });
         
-        if (!res.ok) {
-          if (res.status === 401) {
-            router.push('/login');
-            return;
-          }
-          throw new Error('Failed to fetch');
-        }
+        // if (!res.ok) {
+        //   if (res.status === 401) {
+        //     router.push('/login');
+        //     return;
+        //   }
+        //   throw new Error('Failed to fetch');
+        // }
 
         const data = await res.json();
+        console.log("Fetched products:", data);
         setProducts(data);
       } catch (error) {
         console.error("Failed to fetch products:", error);

@@ -10,12 +10,12 @@ import { Role } from '../common/enums/role.enum';
 @Controller('products')
 export class ProductsController {
   constructor(private productsService: ProductsService) {}
-
+  // @UseGuards(JwtAuthGuard, RolesGuard)
   @Get()
   findAll(@Query('page') page = '1', @Query('category') category?: string) { // highlight-line
     return this.productsService.findAll(Number(page), 12, category); // highlight-line
   }
-
+  @UseGuards(JwtAuthGuard, RolesGuard)
   @Get(':id')
   findOne(@Param('id') id: string) {
     return this.productsService.findOne(Number(id));
