@@ -63,3 +63,4 @@ body {
   /* Thời gian animation phải khớp với interval trong component */
   animation: slideUp 5s ease-in-out infinite;
 }
+

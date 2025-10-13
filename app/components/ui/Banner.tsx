@@ -16,7 +16,7 @@ const Banner = () => {
       autoplay={{ delay: 4000 }}
       loop={true}
       pagination={{ clickable: true }}
-      className="w-full h-64 md:h-[300px] lg:h-[430px] hover:scale-105 transition-transform duration-500"
+      className="w-full h-full md:h-[300px] lg:h-[500px] hover:scale-105 transition-transform duration-500"
     >
       {images.map((src, i) => (
         <SwiperSlide key={i}>

@@ -55,13 +55,13 @@ export default function ProductPage() {
           },
         });
         
-        // if (!res.ok) {
-        //   if (res.status === 401) {
-        //     router.push('/login');
-        //     return;
-        //   }
-        //   throw new Error('Failed to fetch');
-        // }
+        if (!res.ok) {
+          if (res.status === 401) {
+            router.push('/login');
+            return;
+          }
+          throw new Error('Failed to fetch');
+        }
 
         const data = await res.json();
         console.log("Fetched products:", data);
@@ -108,7 +108,7 @@ export default function ProductPage() {
       {products.length > 0 ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8">
           {products.map((product) => (
-            <ProductCard key={product.id} product={product} />
+            <ProductCard key={product.id} product={product} categorySlug={categorySlug} />
           ))}
         </div>
       ) : (

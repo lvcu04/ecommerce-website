@@ -10,27 +10,29 @@ import { Role } from '../common/enums/role.enum';
 @Controller('products')
 export class ProductsController {
   constructor(private productsService: ProductsService) {}
-  // @UseGuards(JwtAuthGuard, RolesGuard)
+  
+  // Cho phép mọi người xem danh sách sản phẩm (không cần Auth)
   @Get()
-  findAll(@Query('page') page = '1', @Query('category') category?: string) { // highlight-line
-    return this.productsService.findAll(Number(page), 12, category); // highlight-line
+  findAll(@Query('page') page = '1', @Query('category') category?: string) { 
+    return this.productsService.findAll(Number(page), 12, category); 
   }
-  @UseGuards(JwtAuthGuard, RolesGuard)
+  
+  // Xóa Guard để cho phép mọi người xem chi tiết sản phẩm (GET /products/:id)
+  // @UseGuards(JwtAuthGuard, RolesGuard) // highlight-line
   @Get(':id')
   findOne(@Param('id') id: string) {
     return this.productsService.findOne(Number(id));
   }
 
-  // highlight-start
+  // --- Các route cần quyền Admin vẫn được bảo vệ ---
+
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.Admin)
   @Post()
-  // highlight-end
   create(@Body() body: any) {
     return this.productsService.create(body);
   }
 
-  // Gợi ý thêm cho các hàm update và remove
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.Admin)
   @Put(':id')

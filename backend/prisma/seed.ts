@@ -51,6 +51,14 @@ async function main() {
         imageUrl: 'https://res.cloudinary.com/dlwginyxy/image/upload/v1759336398/pdbsg0nqx4spwkjtbfwn.png',
         categoryId: category1.id,
       },
+      {
+        name: 'Giày Sneaker Nam Nike Terra Manta - Xanh Dương',
+        description: 'Chất liệu thoáng mát, co giãn tốt.',
+        price: 2749000,
+        stock: 50,
+        imageUrl: 'https://res.cloudinary.com/dlwginyxy/image/upload/v1759566220/zu85zxog8dkzcmxc3qls.webp',
+        categoryId: category1.id,
+      },
      
     ],
   });

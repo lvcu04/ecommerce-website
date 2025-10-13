@@ -117,10 +117,10 @@ const Header = () => {
       {isMenuOpen && (
         <nav className="md:hidden bg-[#001A2D] border-t border-[#001A2D]">
           <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3">
-            <Link href="/products?category=men" className="block px-3 py-2 rounded-md text-base text-white hover:bg-lime-500">Nam</Link>
-            <Link href="/products?category=women" className="block px-3 py-2 rounded-md text-base text-white hover:bg-lime-500">Nữ</Link>
-            <Link href="/products?category=kids" className="block px-3 py-2 rounded-md text-base text-white hover:bg-lime-500">Trẻ em</Link>
-            <Link href="/products?category=accessories" className="block px-3 py-2 rounded-md text-base text-white hover:bg-lime-500">Phụ kiện</Link>
+            <Link href="/products/men" className="block px-3 py-2 rounded-md text-base text-white hover:bg-lime-500">Nam</Link>
+            <Link href="/products/women" className="block px-3 py-2 rounded-md text-base text-white hover:bg-lime-500">Nữ</Link>
+            <Link href="/products/kids" className="block px-3 py-2 rounded-md text-base text-white hover:bg-lime-500">Trẻ em</Link>
+            <Link href="/products/accessories" className="block px-3 py-2 rounded-md text-base text-white hover:bg-lime-500">Phụ kiện</Link>
             
             {/* Hiển thị nút Đăng xuất hoặc Đăng nhập cho mobile */}
             {isLoggedIn ? (

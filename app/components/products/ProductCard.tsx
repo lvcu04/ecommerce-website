@@ -15,11 +15,13 @@ const formatPrice = (price: number) => {
  * Component hiển thị thông tin cơ bản của một sản phẩm trong danh sách.
  * Bao gồm hình ảnh, tên, và giá.
  * @param product - Object sản phẩm chứa thông tin cần hiển thị.
+ * @param categorySlug - Slug của danh mục (ví dụ: 'men', 'women'). Cần thiết cho đường dẫn lồng nhau. // highlight-line
  */
-const ProductCard = ({ product }: { product: Product }) => {
+const ProductCard = ({ product, categorySlug }: { product: Product, categorySlug: string }) => { // highlight-line
   return (
     <Link 
-      href={`/product/${product.id}`} 
+      // Cập nhật đường dẫn để sử dụng cấu trúc lồng nhau mới: /products/[category]/[id]
+      href={`/products/${categorySlug}/${product.id}`} // highlight-line
       className="group relative block overflow-hidden rounded-lg border border-gray-200/80 dark:border-gray-800/80 shadow-sm transition-all duration-300 hover:shadow-lg hover:-translate-y-1"
     >
       <div className="relative h-64 w-full overflow-hidden">
