@@ -1,0 +1,58 @@
+version: '3.8'
+
+services:
+  # Load Balancer (lb) - Nghe cổng 80 công khai
+  lb:
+    build: ./nginx_lb
+    ports:
+      - "80:80"
+    depends_on:
+      - backend-web1
+      - backend-web2
+      - backend-web3
+    restart: always
+
+  # Backend Monolithic - Bản sao 1 (Dev Mode)
+  backend-web1:
+    build: ./backend
+    env_file:
+      - ./.env.backend  # <-- Tải các biến môi trường từ file mới
+    environment:
+      - SERVER_ID=Web-Server-1
+      - NODE_ENV=development 
+    expose:
+      - "3001"
+    volumes:
+      - ./backend:/app  # <-- Volume Mount cho Hot-Reloading
+      - /app/node_modules # <-- Tách node_modules ra để tránh lỗi trên Windows/Linux
+    restart: always
+  
+  # Backend Monolithic - Bản sao 2 (Chỉ khác SERVER_ID)
+  backend-web2:
+    build: ./backend
+    env_file:
+      - ./.env.backend
+    environment:
+      - SERVER_ID=Web-Server-2
+      - NODE_ENV=development
+    expose:
+      - "3001"
+    volumes:
+      - ./backend:/app
+      - /app/node_modules
+    restart: always
+
+  # Backend Monolithic - Bản sao 3 (Chỉ khác SERVER_ID)
+  backend-web3:
+    build: ./backend
+    env_file:
+      - ./.env.backend
+    environment:
+      - SERVER_ID=Web-Server-3
+      - NODE_ENV=development
+    expose:
+      - "3001"
+    volumes:
+      - ./backend:/app
+      - /app/node_modules
+    restart: always

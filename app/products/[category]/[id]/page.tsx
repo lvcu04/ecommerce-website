@@ -37,8 +37,7 @@ const ProductNestedDetailPage = () => {
 
   const getToken = () => typeof window !== 'undefined' ? localStorage.getItem('accessToken') : null;
 
-  // Logic Fetch sản phẩm (giữ nguyên)
-  useEffect(() => {
+    useEffect(() => {
     if (isNaN(productId)) {
         setIsLoading(false);
         return;
@@ -46,8 +45,6 @@ const ProductNestedDetailPage = () => {
     
     async function fetchProduct() {
       setIsLoading(true);
-      // Giữ nguyên logic fetch sản phẩm từ backend của bạn
-      // ... (code fetch product của bạn)
       try {
         const token = getToken();
         const url = `http://localhost:3001/products/${productId}`;
@@ -60,15 +57,7 @@ const ProductNestedDetailPage = () => {
         const res = await fetch(url, { headers });
         
         if (!res.ok) {
-            let errorMessage = `Failed to fetch product (Status: ${res.status})`;
-            try {
-                const errorData = await res.json();
-                if (errorData.message) {
-                    errorMessage = errorData.message;
-                }
-            } catch (e) {
-                // Bỏ qua nếu không phải JSON
-            }
+            // ... (xử lý lỗi giữ nguyên)
             
             if (res.status === 401) {
                 router.push('/login');
@@ -78,11 +67,21 @@ const ProductNestedDetailPage = () => {
                 setProduct(null);
                 return;
             }
-            throw new Error(errorMessage);
+            throw new Error(`Error: ${res.status} ${res.statusText}`);
         }
 
         const data = await res.json();
         setProduct(data);
+        
+        // --- ĐIỂM CHỈNH SỬA: Khởi tạo ảnh chính ---
+        if (data.imageUrl) {
+            setMainImage(data.imageUrl);
+        } else {
+            // Fallback nếu không có ảnh
+            setMainImage('https://placehold.co/600x400/EEE/31343C?text=No+Image'); 
+        }
+        // ----------------------------------------
+        
       } catch (error) {
         console.error('Fetch error:', error);
         setProduct(null);

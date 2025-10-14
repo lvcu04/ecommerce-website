@@ -1,7 +1,7 @@
 // lvcu04/ecommerce-website/ecommerce-website-4aa712de464d3c3e54b59a353190ac2820039d81/backend/src/products/products.service.ts
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma.service';
-import { Prisma } from '@prisma/client'; // Import Prisma để sử dụng QueryMode
+import { Prisma, Product } from '@prisma/client'; 
 
 @Injectable()
 export class ProductsService {
