@@ -48,7 +48,7 @@ export default function ProductPage() {
     async function fetchProducts() {
       setIsLoading(true); // Bắt đầu loading khi fetch
       try {
-        const url = `http://localhost:3001/products?category=${encodeURIComponent(categoryName)}`;
+        const url = `http://localhost/products?category=${encodeURIComponent(categoryName)}`;
         const res = await fetch(url, {
           headers: {
             'Authorization': `Bearer ${token}`,

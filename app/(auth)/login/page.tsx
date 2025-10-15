@@ -23,7 +23,7 @@ export default function LoginPage() {
     setError('');
 
     try {
-      const response = await fetch('http://localhost:3001/auth/login', {
+      const response = await fetch('http://localhost/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password }),
@@ -38,8 +38,8 @@ export default function LoginPage() {
       localStorage.setItem('accessToken', data.access_token);
       router.push('/'); // Chuyển về trang chủ sau khi đăng nhập thành công
       
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err: unknown) {
+      setError((err as Error).message);
     } finally {
       setIsLoading(false);
     }

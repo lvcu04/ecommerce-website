@@ -52,10 +52,13 @@ const Footer = () => {
         <div className="space-y-3">
           <h3 className="font-bold">PHƯƠNG THỨC THANH TOÁN</h3>
           <div className="flex flex-wrap gap-2">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src="https://cdn.shopify.com/s/files/1/0456/5070/6581/files/ICON_PAYMENT_VN.png?v=1713840527" width="100%" height="30px" alt="supersports-payment-method" loading="lazy"></img>
           </div>
           <div className="flex flex-col gap-2">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src="https://cdn.shopify.com/s/files/1/0670/3484/1376/files/image_41_487e5803-f4d0-489f-ac14-7b301b6cbb92.png?v=1683197427" alt="certificate" width="150px" height="50px" loading="lazy"></img>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
             <img className="w-25" src="https://images.dmca.com/Badges/DMCA_logo-grn-btn100w.png?ID=82a9b6db-8bb5-4f59-b809-e909e4e33dda" alt="DMCA.com Protection Status"></img>
           </div>
         </div>

@@ -20,6 +20,7 @@ const Banner = () => {
     >
       {images.map((src, i) => (
         <SwiperSlide key={i}>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={src}
             alt=""

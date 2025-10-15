@@ -58,6 +58,7 @@ export default function HomePage() {
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-6">
           {brandLogos.map((src, i) => (
             <div key={i} className="flex items-center justify-center">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src={src}
                 alt={`brand-${i}`}
@@ -70,6 +71,7 @@ export default function HomePage() {
 
         {/* Banner giữa */}
         <div className="mt-20 mb-10">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src="//supersports.com.vn/cdn/shop/files/MOSS_1909_0510_1545_500_V.jpg?v=1758277386&width=2400"
             alt="mid-sale-banner"
@@ -90,6 +92,7 @@ export default function HomePage() {
               rel="noopener noreferrer"
               className="block overflow-hidden rounded-xl shadow-md hover:scale-105 transition-transform duration-300"
             >
+              {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src={brand.src}
                 alt={brand.alt}

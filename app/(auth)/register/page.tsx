@@ -36,8 +36,8 @@ export default function RegisterPage() {
         router.push('/login');
       }, 2000);
 
-    } catch (err: any) {
-      setError(err.message);
+    }catch (err: unknown) {
+      setError((err as Error).message);
     } finally {
       setIsLoading(false);
     }

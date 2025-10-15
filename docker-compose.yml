@@ -1,39 +1,53 @@
 version: '3.8'
 
 services:
-  # Load Balancer (lb) - Nghe cổng 80 công khai
+  # 1. FRONTEND SERVICE (Next.js UI)
+  frontend:
+    build:
+      context: . # <-- FIX LỖI: Đặt Context là thư mục gốc để tìm các file Next.js
+      dockerfile: ./frontend/Dockerfile
+    environment:
+      - PORT=3000
+      - NODE_ENV=production
+    expose:
+      - "3000"
+    restart: always
+
+  # 2. LOAD BALANCER (Nginx - Cổng Public 80)
   lb:
     build: ./nginx_lb
     ports:
       - "80:80"
     depends_on:
+      - frontend 
       - backend-web1
       - backend-web2
       - backend-web3
     restart: always
 
-  # Backend Monolithic - Bản sao 1 (Dev Mode)
+  # 3. BACKEND MONOLITHIC - REPLICAS (PORT 3001)
   backend-web1:
     build: ./backend
     env_file:
-      - ./.env.backend  # <-- Tải các biến môi trường từ file mới
+      - ./.env.backend
     environment:
       - SERVER_ID=Web-Server-1
+      - PORT=3001 
       - NODE_ENV=development 
     expose:
       - "3001"
     volumes:
-      - ./backend:/app  # <-- Volume Mount cho Hot-Reloading
-      - /app/node_modules # <-- Tách node_modules ra để tránh lỗi trên Windows/Linux
+      - ./backend:/app
+      - /app/node_modules # Tách node_modules cho Hot-Reloading
     restart: always
   
-  # Backend Monolithic - Bản sao 2 (Chỉ khác SERVER_ID)
   backend-web2:
     build: ./backend
     env_file:
       - ./.env.backend
     environment:
       - SERVER_ID=Web-Server-2
+      - PORT=3001
       - NODE_ENV=development
     expose:
       - "3001"
@@ -42,13 +56,13 @@ services:
       - /app/node_modules
     restart: always
 
-  # Backend Monolithic - Bản sao 3 (Chỉ khác SERVER_ID)
   backend-web3:
     build: ./backend
     env_file:
       - ./.env.backend
     environment:
       - SERVER_ID=Web-Server-3
+      - PORT=3001
       - NODE_ENV=development
     expose:
       - "3001"

@@ -8,6 +8,7 @@ export class ProductsService {
   constructor(private prisma: PrismaService) {}
 
   findAll(page = 1, pageSize = 12, category?: string) {
+    // Sửa lỗi TS2694
     const where: Prisma.ProductWhereInput = category
       ? { category: { name: { equals: category, mode: 'insensitive' } } }
       : {};

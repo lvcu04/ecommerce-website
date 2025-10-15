@@ -47,7 +47,7 @@ const ProductNestedDetailPage = () => {
       setIsLoading(true);
       try {
         const token = getToken();
-        const url = `http://localhost:3001/products/${productId}`;
+        const url = `http://localhost/products/${productId}`;
         const headers: HeadersInit = { 'Content-Type': 'application/json' };
         
         if (token) {
@@ -136,8 +136,8 @@ const ProductNestedDetailPage = () => {
       setAddToCartMessage(`Đã thêm ${quantity} sản phẩm (Size: ${selectedSize}) vào giỏ hàng!`);
       setTimeout(() => setAddToCartMessage(''), 2000);
 
-    } catch (error: any) {
-      setAddToCartMessage(`Lỗi: ${error.message}`);
+    } catch (error: unknown) { // Sửa lỗi 'any' bằng 'unknown'
+      setAddToCartMessage(`Lỗi: ${(error as Error).message}`);
     }
   }, [product, quantity, router, selectedSize]); // Thêm selectedSize vào dependency array // highlight-line
 
