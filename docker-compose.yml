@@ -5,10 +5,12 @@ services:
   frontend:
     build:
       context: . # <-- FIX LỖI: Đặt Context là thư mục gốc để tìm các file Next.js
-      dockerfile: ./frontend/Dockerfile
+      dockerfile: ./Dockerfile
     environment:
       - PORT=3000
       - NODE_ENV=production
+    ports:
+      - "3000:3000"
     expose:
       - "3000"
     restart: always

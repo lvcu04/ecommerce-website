@@ -1,0 +1,11 @@
+# Loại trừ thư mục Backend không liên quan đến Frontend
+backend/
+
+# Các thư mục và file được tạo ra trong quá trình phát triển/build
+node_modules
+.next
+.env*
+.vercel
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
