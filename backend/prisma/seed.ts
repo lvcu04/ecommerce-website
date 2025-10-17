@@ -7,6 +7,14 @@ const prisma = new PrismaClient();
 async function main() {
   console.log('Start seeding ...');
 
+  await prisma.review.deleteMany();
+  await prisma.orderItem.deleteMany();
+  await prisma.order.deleteMany();
+  await prisma.cartItem.deleteMany();
+  await prisma.product.deleteMany();
+  await prisma.user.deleteMany();
+  await prisma.category.deleteMany();
+  console.log('Cleaned old data.');
   // --- Tạo Categories ---
   const category1 = await prisma.category.create({ data: { name: 'Nam' } });
   const category2 = await prisma.category.create({ data: { name: 'Nữ' } });

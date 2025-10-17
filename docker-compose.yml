@@ -1,10 +1,10 @@
 version: '3.8'
 
 services:
-  # 1. FRONTEND SERVICE (Next.js UI)
+  # 1. FRONTEND SERVICE (Next.js UI) - KHÔNG PHỤ THUỘC VÀO LB
   frontend:
     build:
-      context: . # <-- FIX LỖI: Đặt Context là thư mục gốc để tìm các file Next.js
+      context: . 
       dockerfile: ./Dockerfile
     environment:
       - PORT=3000
@@ -20,6 +20,8 @@ services:
     build: ./nginx_lb
     ports:
       - "80:80"
+    # SỬA depends_on: chỉ chờ các service đã khởi tạo.
+    # Việc này giúp Nginx có thể giải quyết DNS nội bộ.
     depends_on:
       - frontend 
       - backend-web1
@@ -38,11 +40,16 @@ services:
       - NODE_ENV=development 
     expose:
       - "3001"
+    ports: # <--- ĐÃ THÊM: Ánh xạ cổng 5555 cho Prisma Studio
+      - "5555:5555"
     volumes:
       - ./backend:/app
-      - /app/node_modules # Tách node_modules cho Hot-Reloading
+      - /app/node_modules 
     restart: always
-  
+    depends_on:
+      db:
+        condition: service_healthy # CHỜ DB SẴN SÀNG
+
   backend-web2:
     build: ./backend
     env_file:
@@ -57,6 +64,9 @@ services:
       - ./backend:/app
       - /app/node_modules
     restart: always
+    depends_on:
+      db:
+        condition: service_healthy # CHỜ DB SẴN SÀNG
 
   backend-web3:
     build: ./backend
@@ -72,3 +82,29 @@ services:
       - ./backend:/app
       - /app/node_modules
     restart: always
+    depends_on:
+      db:
+        condition: service_healthy # CHỜ DB SẴN SÀNG
+        
+  # 4. DATABASE SERVICE (PostgreSQL)
+  db:
+    image: postgres:16-alpine
+    restart: always
+    env_file:
+      - ./.env.backend 
+    volumes:
+      - postgres_data:/var/lib/postgresql/data 
+    expose:
+      - "5432"
+    ports:
+      - "5433:5432" # Cổng map ra host để truy cập từ bên ngoài (nếu cần)
+    healthcheck: 
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+# Khai báo Volume
+volumes:
+  postgres_data:
+    driver: local

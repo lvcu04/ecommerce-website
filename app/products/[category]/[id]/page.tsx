@@ -114,7 +114,7 @@ const ProductNestedDetailPage = () => {
 
     try {
       // Endpoint: /cart/add
-      const response = await fetch('http://localhost:3001/cart/add', {
+      const response = await fetch('http://localhost/cart/add', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
