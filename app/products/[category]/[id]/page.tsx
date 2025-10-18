@@ -47,7 +47,7 @@ const ProductNestedDetailPage = () => {
       setIsLoading(true);
       try {
         const token = getToken();
-        const url = `http://localhost/products/${productId}`;
+        const url = `http://backend-web1:3001/products/${productId}`;
         const headers: HeadersInit = { 'Content-Type': 'application/json' };
         
         if (token) {
