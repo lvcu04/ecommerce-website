@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { Product } from '@/app/(types)'; 
+import { authFetch } from '@/app/utils/authFetch';
 
 // Định dạng giá tiền
 const formatPrice = (price: number) => {
@@ -96,39 +97,39 @@ const ProductNestedDetailPage = () => {
 
   // Logic Thêm vào Giỏ Hàng (thêm kiểm tra size và truyền size vào payload)
   const handleAddToCart = useCallback(async () => {
-    const token = getToken();
+    if (!product || quantity <= 0) return;
+    if (!selectedSize) {
+      setAddToCartMessage('Vui lòng chọn Kích thước.');
+      return;
+    }
+
+    // Kiểm tra token trước khi gọi API để tránh gọi khi đã biết là không có token
+    const token = localStorage.getItem('accessToken');
     if (!token) {
       setAddToCartMessage('Vui lòng đăng nhập để thêm vào giỏ hàng.');
       router.push('/login');
       return;
     }
 
-    if (!product || quantity <= 0) return;
-
-    if (!selectedSize) { // highlight-line
-      setAddToCartMessage('Vui lòng chọn Kích thước.'); // highlight-line
-      return; // highlight-line
-    }
-
     setAddToCartMessage('Đang thêm...');
 
     try {
-      // Endpoint: /cart/add
-      const response = await fetch('/api/cart/add', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
-        },
-        body: JSON.stringify({ 
+      // SỬ DỤNG authFetch THAY VÌ fetch THÔNG THƯỜNG
+      const response = await authFetch(
+        '/api/cart/add', 
+        {
+          method: 'POST',
+          body: JSON.stringify({ 
             productId: product.id, 
             quantity: quantity,
-            // Thêm size vào payload (Mặc dù backend hiện tại không dùng, nhưng đây là cách chuẩn bị)
             size: selectedSize, 
-        }),
-      });
+          }),
+        },
+        router // <--- Truyền router vào
+      );
 
       if (!response.ok) {
+        // Lỗi 401 đã được xử lý bên trong authFetch, các lỗi khác sẽ vào đây
         const errorData = await response.json();
         throw new Error(errorData.message || 'Thêm vào giỏ hàng thất bại.');
       }
@@ -136,11 +137,14 @@ const ProductNestedDetailPage = () => {
       setAddToCartMessage(`Đã thêm ${quantity} sản phẩm (Size: ${selectedSize}) vào giỏ hàng!`);
       setTimeout(() => setAddToCartMessage(''), 2000);
 
-    } catch (error: unknown) { // Sửa lỗi 'any' bằng 'unknown'
-      setAddToCartMessage(`Lỗi: ${(error as Error).message}`);
+    } catch (error: unknown) {
+      const errorMessage = (error as Error).message;
+      // Nếu là lỗi 'Unauthorized' thì không cần hiển thị nữa vì đã có alert và chuyển trang
+      if (errorMessage !== 'Unauthorized') {
+        setAddToCartMessage(`Lỗi: ${errorMessage}`);
+      }
     }
-  }, [product, quantity, router, selectedSize]); // Thêm selectedSize vào dependency array // highlight-line
-
+  }, [product, quantity, router, selectedSize]);
 
   // Cập nhật hàm xử lý tăng/giảm số lượng
   const handleQuantityChange = (type: 'increment' | 'decrement') => { // highlight-start
