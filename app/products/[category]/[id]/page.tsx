@@ -47,7 +47,7 @@ const ProductNestedDetailPage = () => {
       setIsLoading(true);
       try {
         const token = getToken();
-        const url = `http://backend-web1:3001/products/${productId}`;
+        const url = `/api/products/${productId}`;
         const headers: HeadersInit = { 'Content-Type': 'application/json' };
         
         if (token) {
@@ -114,7 +114,7 @@ const ProductNestedDetailPage = () => {
 
     try {
       // Endpoint: /cart/add
-      const response = await fetch('http://localhost/cart/add', {
+      const response = await fetch('/api/cart/add', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

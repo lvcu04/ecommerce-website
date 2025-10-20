@@ -1,6 +1,7 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  output: 'standalone',
   images: {
     remotePatterns: [
       {
@@ -29,13 +30,11 @@ const nextConfig: NextConfig = {
       },
     ],
   },
-
-  // 👇 Thêm phần này để proxy API sang backend container hoặc domain thực
   async rewrites() {
     return [
       {
         source: "/api/:path*",             // Khi frontend gọi /api/...
-        destination: "http://backend-web1:3001/:path*", // chuyển tiếp sang backend container
+        destination: "http://backend-web1:3001/:path*", // Sẽ chuyển tiếp sang backend container
       },
     ];
   },

@@ -1,35 +1,46 @@
-# --- GIAI ĐOẠN 1: BUILD ---
-FROM node:20 AS builder
-
+# Giai đoạn 1: Cài đặt Dependencies
+FROM node:20-alpine AS deps
 WORKDIR /app
 
-# Copy các file cấu hình quan trọng 
-COPY package.json package-lock.json tsconfig.json next.config.ts ./ 
-
-# Cài đặt dependencies 
+# Sao chép package.json và cài đặt dependencies
+COPY package.json package-lock.json* ./
 RUN npm ci
 
-# Copy toàn bộ mã nguồn Frontend
+# Giai đoạn 2: Build ứng dụng
+FROM node:20-alpine AS builder
+WORKDIR /app
+COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
-# Chạy lệnh build Next.js 
+# Tắt Next.js telemetry để không gửi dữ liệu ẩn danh
+ENV NEXT_TELEMETRY_DISABLED 1
+
 RUN npm run build
 
-# --- GIAI ĐOẠN 2: PRODUCTION RUNTIME ---
-FROM node:20-slim AS runner
-
+# Giai đoạn 3: Chạy Production
+FROM node:20-alpine AS runner
 WORKDIR /app
-# Đặt NODE_ENV thành production ở đây là chuẩn
+
 ENV NODE_ENV production
+ENV NEXT_TELEMETRY_DISABLED 1
+
+# Tạo group và user riêng để chạy ứng dụng với quyền hạn thấp hơn (an toàn hơn)
+RUN addgroup --system --gid 1001 nodejs
+RUN adduser --system --uid 1001 nextjs
+
+# Sao chép các file cần thiết từ giai đoạn build
+COPY --from=builder /app/public ./public
+
+# Sao chép output của standalone build
+# Dockerfile này sẽ tự động sao chép các file cần thiết vào đúng vị trí
+COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
+COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
+
+# Chuyển sang user vừa tạo
+USER nextjs
+
+EXPOSE 3000
 ENV PORT 3000
 
-# 1. Copy package.json để lệnh "npm start" hoạt động
-COPY --from=builder /app/package.json ./package.json
-
-# 2. Copy các thư mục cần thiết
-COPY --from=builder /app/public ./public
-COPY --from=builder /app/node_modules ./node_modules
-COPY --from=builder /app/.next ./.next
-
-# Lệnh khởi động Next.js Production Server (Đã sửa từ "npm run dev" thành "npm start")
-CMD ["npm", "start"]
+# Lệnh khởi động server của chế độ standalone
+CMD ["node", "server.js"]

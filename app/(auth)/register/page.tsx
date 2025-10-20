@@ -20,7 +20,7 @@ export default function RegisterPage() {
     setSuccess('');
 
     try {
-      const response = await fetch('http://backend-web1:3001/auth/register', {
+      const response = await fetch('/api/auth/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ name, email, password }),
