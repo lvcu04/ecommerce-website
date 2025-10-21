@@ -236,7 +236,7 @@ export default function CartPage() {
                   -
                 </button>
                 <input
-                  type="number"
+                  type="text"
                   value={item.quantity}
                   min="1"
                   max={item.product.stock}
