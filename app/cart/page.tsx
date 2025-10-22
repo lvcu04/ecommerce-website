@@ -23,7 +23,7 @@ const formatPrice = (price: number) => {
   return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(price);
 };
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL;
+
 
 export default function CartPage() {
   const [cart, setCart] = useState<CartItem[]>([]);
@@ -32,7 +32,7 @@ export default function CartPage() {
   const router = useRouter();
 
   // Helper function để lấy token và headers
-  const getAuthHeaders = () => {
+  const getAuthHeaders = useCallback(() => {
     const token = typeof window !== 'undefined' ? localStorage.getItem('accessToken') : null;
     if (!token) {
       router.push('/login');
@@ -42,7 +42,7 @@ export default function CartPage() {
       'Content-Type': 'application/json',
       'Authorization': `Bearer ${token}`,
     };
-  };
+  }, [router]);
 
   // Hàm Fetch Cart
   const fetchCart = useCallback(async () => {
@@ -72,7 +72,7 @@ export default function CartPage() {
     } finally {
       setIsLoading(false);
     }
-  }, [router]);
+  }, [router , getAuthHeaders]);
 
   useEffect(() => {
     fetchCart();
@@ -123,7 +123,7 @@ export default function CartPage() {
     if (!headers) return;
 
     try {
-      const res = await fetch('/api/cart/${itemId}', {
+      const res = await fetch(`/api/cart/${itemId}`, {
         method: 'DELETE',
         headers,
       });

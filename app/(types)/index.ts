@@ -9,3 +9,21 @@ export interface Product {
   categoryId?: number | null;
   createdAt: string;
 }
+export interface User {
+  id: number;
+  name: string;
+  email: string;
+}
+export interface OrderItem {
+  id: number;
+  quantity: number;
+  price: number;
+  product: Product;
+}
+export interface Order {
+  id: number;
+  totalPrice: number;
+  status: string;
+  createdAt: string;
+  orderItems: OrderItem[];
+}

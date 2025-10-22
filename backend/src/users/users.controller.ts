@@ -1,4 +1,4 @@
-import { Controller, Get, Param, UseGuards, Request } from '@nestjs/common';
+import { Controller, Get, Param, UseGuards, Request, Put } from '@nestjs/common';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { UsersService } from './users.service';
 
@@ -18,4 +18,11 @@ export class UsersController {
   async me(@Request() req) {
     return this.usersService.findById(req.user.userId);
   }
+  // dùng cho user thay đổi thông tin
+  @UseGuards(JwtAuthGuard)
+  @Put('me')
+  async updateProfile(@Request() req, @Param() params, @Request() body) {
+    return this.usersService.updateProfile(req.user.userId, body);
+  }
+  
 }

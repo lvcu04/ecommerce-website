@@ -146,6 +146,24 @@ const ProductNestedDetailPage = () => {
     }
   }, [product, quantity, router, selectedSize]);
 
+  const handleBuyNow = useCallback(() => {
+    if (!product) return;
+    if (!selectedSize) {
+      setAddToCartMessage('Vui lòng chọn Kích thước.');
+      return;
+    }
+
+    const token = localStorage.getItem('accessToken');
+    if (!token) {
+      router.push('/login');
+      return;
+    }
+
+    // Chuyển hướng đến trang checkout với thông tin sản phẩm
+    router.push(`/checkout?productId=${product.id}&quantity=${quantity}&size=${selectedSize}`);
+  }, [product, quantity, selectedSize, router]);
+
+  
   // Cập nhật hàm xử lý tăng/giảm số lượng
   const handleQuantityChange = (type: 'increment' | 'decrement') => { // highlight-start
     const newQuantity = type === 'increment' ? quantity + 1 : quantity - 1;
@@ -328,7 +346,7 @@ const ProductNestedDetailPage = () => {
                   disabled={isOutOfStock || !selectedSize}
                   className="w-1/2 bg-[#001A2D] text-white py-3 px-6 rounded-full font-semibold hover:bg-gray-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   // Giả lập nút "Mua Ngay" - hiện tại giống với Thêm vào Giỏ
-                  onClick={handleAddToCart} 
+                  onClick={handleBuyNow} 
                 >
                   MUA NGAY
                 </button>
