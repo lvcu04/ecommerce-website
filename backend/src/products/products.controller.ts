@@ -13,8 +13,8 @@ export class ProductsController {
   
   // Cho phép mọi người xem danh sách sản phẩm (không cần Auth)
   @Get()
-  findAll(@Query('page') page = '1', @Query('category') category?: string) { 
-    return this.productsService.findAll(Number(page), 12, category); 
+  findAll(@Query('page') page = '1', @Query('category') category?: string, @Query('search') search?: string) { 
+    return this.productsService.findAll(Number(page), 12, category , search); 
   }
   
   // Xóa Guard để cho phép mọi người xem chi tiết sản phẩm (GET /products/:id)

@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Image from 'next/image';
-import { Product } from '@/app/(types)'; 
+import { Product, Review } from '@/app/(types)'; 
 import { authFetch } from '@/app/utils/authFetch';
 
 // Định dạng giá tiền
@@ -23,8 +23,19 @@ const GALLERY_IMAGES = [
   'https://supersports.com.vn/cdn/shop/files/432997-107-7.jpg?v=1757327039',
   'https://supersports.com.vn/cdn/shop/files/432997-107-8.jpg?v=1757327039&width=1000',
 ];
+
+const StarRating = ({ rating }: { rating: number }) => {
+  return (
+    <div className="flex">
+      {[1, 2, 3, 4, 5].map((star) => (
+        <Image key={star} src="/assets/icon/star.png" alt={`${star} star`} width={16} height={16} />
+      ))}
+    </div>
+  );
+};
 const ProductNestedDetailPage = () => {
   const [product, setProduct] = useState<Product | null>(null);
+  const [reviews, setReviews] = useState<Review[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [quantity, setQuantity] = useState(1);
   const [selectedSize, setSelectedSize] = useState<string | null>(null); // State mới cho size // highlight-line
@@ -145,6 +156,23 @@ const ProductNestedDetailPage = () => {
       }
     }
   }, [product, quantity, router, selectedSize]);
+// useEffect mới để fetch reviews
+  useEffect(() => {
+    if (!productId) return;
+
+    const fetchReviews = async () => {
+      try {
+        const res = await fetch(`/api/reviews/product/${productId}`);
+        if (!res.ok) throw new Error('Không thể tải đánh giá');
+        const data = await res.json();
+        setReviews(data);
+      } catch (error) {
+        console.error('Fetch reviews error:', error);
+      }
+    };
+
+    fetchReviews();
+  }, [productId]);
 
   const handleBuyNow = useCallback(() => {
     if (!product) return;
@@ -376,7 +404,48 @@ const ProductNestedDetailPage = () => {
           </div>
         </div>
       </div>
+      {/* Phần đánh giá sản phẩm */}
+      <div className="mt-12 border-t pt-10">
+        <h2 className="text-2xl font-bold mb-6">Đánh giá sản phẩm</h2>
+        
+        {/* Form để lại đánh giá (tạm thời chưa có logic submit) */}
+        <div className="mb-8 p-6 bg-gray-50 rounded-lg">
+          <h3 className="font-semibold mb-3">Để lại đánh giá của bạn</h3>
+          {/* Component form chi tiết sẽ được thêm ở đây trong tương lai */}
+          <textarea 
+            className="w-full p-2 border rounded-md" 
+            rows={3} 
+            placeholder="Viết bình luận của bạn..."
+          ></textarea>
+          <div className="flex items-center justify-between mt-3">
+             <div className="flex items-center">
+                <span className="mr-2">Xếp hạng:</span>
+                {/* Logic chọn sao sẽ được thêm sau */}
+             </div>
+             <button className="bg-lime-600 text-white px-6 py-2 rounded-md hover:bg-lime-700">Gửi đánh giá</button>
+          </div>
+        </div>
+
+        {/* Danh sách các đánh giá */}
+        <div className="space-y-6">
+          {reviews.length > 0 ? (
+            reviews.map((review) => (
+              <div key={review.id} className="border-b pb-4">
+                <div className="flex items-center mb-2">
+                  <StarRating rating={review.rating} />
+                  <p className="ml-4 font-bold">{review.user.name || 'Anonymous'}</p>
+                </div>
+                <p className="text-gray-600">{review.comment}</p>
+                <p className="text-xs text-gray-400 mt-2">{new Date(review.createdAt).toLocaleDateString('vi-VN')}</p>
+              </div>
+            ))
+          ) : (
+            <p className="text-gray-500">Chưa có đánh giá nào cho sản phẩm này.</p>
+          )}
+        </div>
+      </div>
     </div>
+
 
   );
 };

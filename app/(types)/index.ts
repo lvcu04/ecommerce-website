@@ -27,3 +27,12 @@ export interface Order {
   createdAt: string;
   orderItems: OrderItem[];
 }
+export interface Review {
+  id: number;
+  rating: number;
+  comment: string | null;
+  createdAt: string;
+  user: {
+    name: string | null;
+  };
+}
