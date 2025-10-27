@@ -3,8 +3,9 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Image from 'next/image';
-import { Product, Review } from '@/app/(types)'; 
+import { Product, Review } from '@/app/(types)';
 import { authFetch } from '@/app/utils/authFetch';
+import starIcon from '@/app/assets/icon/star.png'; // Import ảnh sao
 
 // Định dạng giá tiền
 const formatPrice = (price: number) => {
@@ -28,7 +29,7 @@ const StarRating = ({ rating }: { rating: number }) => {
   return (
     <div className="flex">
       {[1, 2, 3, 4, 5].map((star) => (
-        <Image key={star} src="/assets/icon/star.png" alt={`${star} star`} width={16} height={16} />
+        <Image key={star} src={starIcon} alt={`${star} star`} width={16} height={16} />
       ))}
     </div>
   );

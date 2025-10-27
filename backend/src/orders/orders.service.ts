@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma.service';
-
+import { Prisma } from '@prisma/client';
 @Injectable()
 export class OrdersService {
   constructor(private prisma: PrismaService) {}
@@ -131,6 +131,69 @@ export class OrdersService {
         },
       },
       orderBy: { createdAt: 'desc' },
+    });
+  }
+
+  async findAllForAdmin(options: { page: number; pageSize: number; status?: string; userId?: number }) {
+    const { page, pageSize, status, userId } = options;
+    const where: Prisma.OrderWhereInput = {};
+
+    if (status) {
+      where.status = status;
+    }
+    if (userId) {
+      where.userId = userId;
+    }
+
+    const total = await this.prisma.order.count({ where });
+    const orders = await this.prisma.order.findMany({
+      where,
+      skip: (page - 1) * pageSize,
+      take: pageSize,
+      orderBy: { createdAt: 'desc' },
+      include: {
+        user: { select: { id: true, email: true, name: true } }, // Lấy thông tin người dùng
+        orderItems: { include: { product: { select: { id: true, name: true, imageUrl: true } } } }, // Lấy thông tin sản phẩm rút gọn
+      },
+    });
+
+    return {
+      orders,
+      total,
+      currentPage: page,
+      totalPages: Math.ceil(total / pageSize),
+    };
+  }
+
+  // Hàm mới cho Admin xem chi tiết đơn hàng
+  async findOneForAdmin(id: number) {
+    const order = await this.prisma.order.findUnique({
+       where: { id },
+       include: {
+         user: { select: { id: true, email: true, name: true } },
+         orderItems: { include: { product: true } }, // Lấy đầy đủ thông tin sản phẩm
+       },
+     });
+     if (!order) {
+       throw new NotFoundException(`Order with ID ${id} not found`);
+     }
+     return order;
+   }
+
+  // Hàm mới cho Admin cập nhật trạng thái đơn hàng
+  async updateStatus(id: number, status: string) {
+    // Kiểm tra xem đơn hàng có tồn tại không
+    const order = await this.prisma.order.findUnique({ where: { id } });
+    if (!order) {
+      throw new NotFoundException(`Order with ID ${id} not found`);
+    }
+
+    // (Tùy chọn) Thêm logic kiểm tra xem trạng thái mới có hợp lệ không
+    // Ví dụ: không cho phép chuyển từ "đã hủy" sang "đang giao"
+
+    return this.prisma.order.update({
+      where: { id },
+      data: { status },
     });
   }
 }

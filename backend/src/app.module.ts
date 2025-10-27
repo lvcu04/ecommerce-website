@@ -1,21 +1,22 @@
+// src/app.module.ts
 import { Module } from '@nestjs/common';
-import { ConfigModule } from '@nestjs/config'; // highlight-line
+import { ConfigModule } from '@nestjs/config';
 import { PrismaService } from './prisma.service';
 import { UsersModule } from './users/users.module';
-import { AuthModule } from './auth/auth.module'; // Sửa lại import này
+import { AuthModule } from './auth/auth.module';
 import { ProductsModule } from './products/products.module';
 import { CartModule } from './cart/cart.module';
 import { OrdersModule } from './orders/orders.module';
 import { CloudinaryModule } from './cloudinary/cloudinary.module';
 import { UploadModule } from './upload/upload.module';
 import { ReviewsModule } from './reviews/reviews.module';
+import { AdminModule } from './admin/admin.module'; // <-- Thêm dòng này
+
 @Module({
   imports: [
-    // highlight-start
     ConfigModule.forRoot({
-      isGlobal: true, // Biến môi trường sẽ có sẵn trên toàn ứng dụng
+      isGlobal: true,
     }),
-    // highlight-end
     UsersModule,
     AuthModule,
     ProductsModule,
@@ -24,6 +25,7 @@ import { ReviewsModule } from './reviews/reviews.module';
     CloudinaryModule,
     UploadModule,
     ReviewsModule,
+    AdminModule, // <-- Thêm AdminModule vào đây
   ],
   providers: [PrismaService],
 })
