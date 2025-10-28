@@ -10,8 +10,8 @@ import { OrdersModule } from './orders/orders.module';
 import { CloudinaryModule } from './cloudinary/cloudinary.module';
 import { UploadModule } from './upload/upload.module';
 import { ReviewsModule } from './reviews/reviews.module';
-import { AdminModule } from './admin/admin.module'; // <-- Thêm dòng này
-
+import { AdminModule } from './admin/admin.module';
+import { PaymentsModule } from './payments/payments.module';
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -25,7 +25,8 @@ import { AdminModule } from './admin/admin.module'; // <-- Thêm dòng này
     CloudinaryModule,
     UploadModule,
     ReviewsModule,
-    AdminModule, // <-- Thêm AdminModule vào đây
+    AdminModule, 
+    PaymentsModule,
   ],
   providers: [PrismaService],
 })

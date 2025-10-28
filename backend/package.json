@@ -30,13 +30,15 @@
     "passport-jwt": "^4.0.0",
     "pg": "^8.0.0",
     "reflect-metadata": "^0.1.13",
-    "streamifier": "^0.1.1"
+    "streamifier": "^0.1.1",
+    "stripe": "^19.1.0"
   },
   "devDependencies": {
     "@nestjs/cli": "^10.0.0",
+    "@types/bcrypt": "^5.0.0",
     "@types/multer": "^2.0.0",
     "@types/streamifier": "^0.1.2",
-    "@types/bcrypt": "^5.0.0",
+    "@types/stripe": "^8.0.416",
     "prisma": "^5.0.0",
     "ts-node": "^10.0.0",
     "typescript": "^5.0.0"
