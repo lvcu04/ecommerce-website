@@ -1,9 +1,11 @@
+// Fix for: lvcu04/ecommerce-website/ecommerce-website-f1ee64a7e55e72b83449b939107f70e01a0e999d/app/components/ui/Search.tsx
 "use client";
 import { useState, KeyboardEvent, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { FiSearch } from "react-icons/fi";
 import { Product } from "@/app/(types)";
 import Link from "next/link";
+import Image from "next/image"; // <-- Import Image
 
 const Search = () => {
   const router = useRouter();
@@ -37,12 +39,15 @@ const Search = () => {
 
     const fetchSuggestions = async () => {
       try {
-        const response = await fetch(`/api/products?search=${query}`);
+        const response = await fetch(`/api/products?search=${query}&pageSize=5`); // Limit suggestions
+        if (!response.ok) throw new Error('Failed to fetch suggestions');
         const data = await response.json();
-        setSuggestions(data.products);
+        setSuggestions(data.products || []); // Ensure it's an array
         setShowSuggestions(true);
       } catch (error) {
         console.error("Failed to fetch search suggestions:", error);
+        setSuggestions([]);
+        setShowSuggestions(false); // Hide suggestions on error
       }
     };
 
@@ -55,6 +60,7 @@ const Search = () => {
 
   const handleSearch = () => {
     if (query.trim() !== "") {
+        setShowSuggestions(false); // Hide suggestions when submitting search
       router.push(`/search?q=${encodeURIComponent(query.trim())}`);
     }
   };
@@ -75,7 +81,7 @@ const Search = () => {
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           onKeyDown={handleKeyDown}
-          onFocus={() => query && setShowSuggestions(true)}
+          onFocus={() => query.trim() && setShowSuggestions(true)} // Show on focus only if there's query
         />
         <FiSearch
           className="text-white text-xl cursor-pointer"
@@ -83,17 +89,21 @@ const Search = () => {
         />
       </div>
       {showSuggestions && suggestions.length > 0 && (
-        <div className="absolute top-full left-0 right-0 bg-white border border-gray-200 rounded-md mt-1 z-10 max-h-80 overflow-y-auto">
+        <div className="absolute top-full left-0 right-0 bg-white border border-gray-200 rounded-md mt-1 z-10 max-h-80 overflow-y-auto shadow-lg">
           {suggestions.map((product) => (
             <Link
               key={product.id}
+              // Assuming a generic product route, adjust if needed
               href={`/products/product/${product.id}`}
               className="flex items-center p-2 hover:bg-gray-100"
               onClick={() => setShowSuggestions(false)}
             >
-              <img
+              {/* Replaced <img> with <Image /> */}
+              <Image
                 src={product.imageUrl || 'https://placehold.co/40x40'}
                 alt={product.name}
+                width={40} // Specify width
+                height={40} // Specify height
                 className="w-10 h-10 object-cover rounded-md mr-3"
               />
               <div>

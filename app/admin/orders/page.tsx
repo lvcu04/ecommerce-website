@@ -1,7 +1,7 @@
-// app/(admin)/admin/orders/page.tsx
+// Fix for: lvcu04/ecommerce-website/ecommerce-website-f1ee64a7e55e72b83449b939107f70e01a0e999d/app/admin/orders/page.tsx
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react'; // <-- Added useCallback
 import { useRouter } from 'next/navigation';
 import { Order } from '@/app/(types)'; // Import Order type (cần định nghĩa nếu chưa có)
 import { authFetch } from '@/app/utils/authFetch';
@@ -30,13 +30,14 @@ export default function AdminOrdersPage() {
   const [error, setError] = useState('');
   const router = useRouter();
 
-  // Hàm fetch đơn hàng
-  const fetchOrders = async () => {
+  // Hàm fetch đơn hàng - wrapped in useCallback
+  const fetchOrders = useCallback(async () => { // <-- Wrapped in useCallback
       setIsLoading(true);
       setError('');
       try {
         // Gọi API admin/orders (cần đảm bảo backend đã implement findAllForAdmin)
         const res = await authFetch('/api/admin/orders?pageSize=50', {}, router);
+        if (!res) return; // authFetch handled redirect
         if (!res.ok) {
           throw new Error('Không thể tải danh sách đơn hàng.');
         }
@@ -49,11 +50,11 @@ export default function AdminOrdersPage() {
       } finally {
         setIsLoading(false);
       }
-    };
+    }, [router]); // <-- Added router dependency
 
   useEffect(() => {
     fetchOrders();
-  }, [router]); // Fetch lại nếu router thay đổi (ví dụ sau khi login/logout)
+  }, [fetchOrders]); // <-- Use fetchOrders in dependency array
 
   const handleUpdateStatus = async (orderId: number, newStatus: string) => {
       // Xác nhận trước khi đổi (quan trọng!)
@@ -68,6 +69,7 @@ export default function AdminOrdersPage() {
                body: JSON.stringify({ status: newStatus }),
            }, router);
 
+           if (!res) return; // authFetch handled redirect
            if (!res.ok) {
                const errData = await res.json();
                throw new Error(errData.message || 'Cập nhật trạng thái thất bại.');

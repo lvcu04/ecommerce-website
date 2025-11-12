@@ -1,21 +1,19 @@
-// lvcu04/ecommerce-website/ecommerce-website-00324e89d06c51b533ee0b8d5c991011da91ce99/app/checkout/page.tsx
+// Fix for: lvcu04/ecommerce-website/ecommerce-website-f1ee64a7e55e72b83449b939107f70e01a0e999d/app/checkout/page.tsx
 'use client';
 
-import { useState, useEffect, useMemo, Suspense, useCallback } from 'react'; // <-- Added useCallback
+import { useState, useEffect, useMemo, Suspense } from 'react'; // <-- Removed useCallback
 import { useRouter, useSearchParams } from 'next/navigation';
 import Image from 'next/image';
 import { authFetch } from '@/app/utils/authFetch';
-// Remove unused Product import here if CheckoutForm is in the same file
-// import { Product } from '@/app/(types)';
+import { Product } from '@/app/(types)'; // <-- Added Product import
 
 import { loadStripe, StripeElementsOptions } from '@stripe/stripe-js';
-// Keep these imports here as they are used in CheckoutForm below
 import { Elements, CardElement, useStripe, useElements } from '@stripe/react-stripe-js';
 
 interface CheckoutItem {
   id: number;
   quantity: number;
-  product: any; // Using 'any' for simplicity, replace Product if defined elsewhere
+  product: Product; // <-- Changed any to Product
 }
 
 const formatPrice = (price: number) => {
@@ -25,10 +23,10 @@ const formatPrice = (price: number) => {
 const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY || 'YOUR_PK_TEST_KEY');
 
 
-// --- PASTE CheckoutForm definition HERE, BEFORE CheckoutPageContent ---
+// --- CheckoutForm definition ---
 function CheckoutForm({ items, clientSecret }: { items: CheckoutItem[], clientSecret: string }) {
-  const stripe = useStripe(); // Now used
-  const elements = useElements(); // Now used
+  const stripe = useStripe();
+  const elements = useElements();
   const router = useRouter();
   const [isProcessing, setIsProcessing] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -53,7 +51,7 @@ function CheckoutForm({ items, clientSecret }: { items: CheckoutItem[], clientSe
     setIsProcessing(true);
     setErrorMessage(null);
 
-    const cardElement = elements.getElement(CardElement); // Now used
+    const cardElement = elements.getElement(CardElement);
     if (!cardElement) {
         setIsProcessing(false);
         setErrorMessage("Lỗi: Không tìm thấy Card Element.");
@@ -87,6 +85,10 @@ function CheckoutForm({ items, clientSecret }: { items: CheckoutItem[], clientSe
     }
   };
 
+  const cartTotalAmount = useMemo(() => {
+    return items.reduce((total, item) => total + item.quantity * item.product.price, 0);
+  }, [items]);
+
   return (
     <form onSubmit={handleSubmit} className="space-y-6 bg-white p-8 rounded-lg shadow-md">
        <h2 className="text-2xl font-semibold mb-4">Thông tin giao hàng</h2>
@@ -106,7 +108,18 @@ function CheckoutForm({ items, clientSecret }: { items: CheckoutItem[], clientSe
        <h2 className="text-2xl font-semibold mb-4 pt-4 border-t">Thông tin thanh toán</h2>
         <div className="p-3 border rounded-md">
           <CardElement options={{
-              style: { /* styles... */ },
+              style: {
+                base: {
+                  fontSize: '16px',
+                  color: '#424770',
+                  '::placeholder': {
+                    color: '#aab7c4',
+                  },
+                },
+                invalid: {
+                  color: '#9e2146',
+                },
+              },
           }} />
         </div>
 
@@ -117,7 +130,7 @@ function CheckoutForm({ items, clientSecret }: { items: CheckoutItem[], clientSe
         disabled={!stripe || !elements || isProcessing || !clientSecret}
         className="w-full bg-lime-600 text-white py-3 rounded-full font-semibold hover:bg-lime-700 disabled:opacity-50"
       >
-        {isProcessing ? 'Đang xử lý...' : `Thanh toán ${formatPrice(items.reduce((total, item) => total + item.quantity * item.product.price, 0))}`}
+        {isProcessing ? 'Đang xử lý...' : `Thanh toán ${formatPrice(cartTotalAmount)}`}
       </button>
     </form>
   );
@@ -125,7 +138,7 @@ function CheckoutForm({ items, clientSecret }: { items: CheckoutItem[], clientSe
 // --- END of CheckoutForm definition ---
 
 
-// --- CheckoutPageContent remains largely the same, but remove unused imports ---
+// --- CheckoutPageContent ---
 function CheckoutPageContent() {
   const [items, setItems] = useState<CheckoutItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -138,7 +151,6 @@ function CheckoutPageContent() {
   const quantity = searchParams.get('quantity');
 
   useEffect(() => {
-    // ... (logic fetchItemsAndCreateIntent remains the same) ...
      const isBuyNow = !!productId;
     setIsLoading(true);
     setError('');
@@ -148,11 +160,16 @@ function CheckoutPageContent() {
       let fetchedItems: CheckoutItem[] = [];
       try {
         // 1. Fetch items (giỏ hàng hoặc sản phẩm mua ngay)
-        if (isBuyNow) {
+        if (isBuyNow && productId) { // Added null check for productId
           const res = await fetch(`/api/products/${productId}`);
           if (!res.ok) throw new Error('Không thể tải sản phẩm.');
           const productData = await res.json();
-          fetchedItems = [{ product: productData, quantity: Number(quantity || 1), id: productData.id }];
+          // Ensure productData is a valid Product before creating the item
+          if (productData && typeof productData === 'object' && 'id' in productData) {
+              fetchedItems = [{ product: productData, quantity: Number(quantity || 1), id: productData.id }];
+          } else {
+              throw new Error('Dữ liệu sản phẩm không hợp lệ.');
+          }
         } else {
           const res = await authFetch('/api/cart', {}, router);
           // Check for 401 Unauthorized specifically handled by authFetch
@@ -161,6 +178,9 @@ function CheckoutPageContent() {
           if (res.status === 401) return; // Already handled by authFetch
 
           const data = await res.json();
+          if (!Array.isArray(data)) { // Check if data is an array
+              throw new Error('Dữ liệu giỏ hàng không hợp lệ.');
+          }
           if (data.length === 0) {
             alert('Giỏ hàng trống, bạn sẽ được chuyển về trang chủ.');
             router.push('/');
@@ -174,6 +194,8 @@ function CheckoutPageContent() {
         if (fetchedItems.length > 0) {
            const intentRes = await authFetch('/api/payments/create-payment-intent', {
              method: 'POST',
+             // Optionally send items/amount if needed by backend for verification
+             // body: JSON.stringify({ items: fetchedItems })
            }, router);
 
            // Check for 401 Unauthorized again
@@ -187,6 +209,9 @@ function CheckoutPageContent() {
            const intentData = await intentRes.json();
            console.log("Client Secret received:", intentData.clientSecret);
            setClientSecret(intentData.clientSecret); // Lưu clientSecret vào state
+        } else {
+            // Handle case where fetchedItems is empty after checks (e.g., cart became empty)
+            setError("Không có sản phẩm để thanh toán.");
         }
 
       } catch (err: unknown) {
@@ -204,17 +229,23 @@ function CheckoutPageContent() {
   }, [items]);
 
    const options: StripeElementsOptions = useMemo(() => ({
-    clientSecret: clientSecret || undefined,
+    clientSecret: clientSecret || undefined, // Pass undefined if null
      appearance: { theme: 'stripe' },
    }), [clientSecret]);
 
-  if (isLoading && !clientSecret) {
+  if (isLoading && !clientSecret && !error) { // Added !error condition
     return <div className="min-h-screen text-center py-10">Đang tải thông tin thanh toán...</div>;
   }
 
    if (error) {
      return <div className="min-h-screen text-center py-10 text-red-500">Lỗi: {error}</div>;
    }
+
+   // Added check for items length before rendering checkout form
+   if (!isLoading && items.length === 0 && !error) {
+       return <div className="min-h-screen text-center py-10">Không có sản phẩm để thanh toán.</div>;
+   }
+
 
   return (
     <div className="container mx-auto px-4 py-12 min-h-screen">
@@ -228,12 +259,11 @@ function CheckoutPageContent() {
               </Elements>
            ) : (
              <div className="bg-white p-8 rounded-lg shadow-md text-center">
-               Đang khởi tạo cổng thanh toán... {isLoading ? '(Đang tải...)' : ''}
+               {isLoading ? 'Đang khởi tạo cổng thanh toán...' : 'Không thể khởi tạo thanh toán.'}
              </div>
            )}
         </div>
-        {/* Phần hiển thị đơn hàng giữ nguyên */}
-        {/* ... */}
+        {/* Phần hiển thị đơn hàng */}
          <div className="lg:w-5/12">
            <div className="bg-gray-50 p-6 rounded-lg shadow-lg sticky top-24">
             <h2 className="text-2xl font-bold mb-4">Đơn hàng của bạn</h2>
@@ -241,7 +271,9 @@ function CheckoutPageContent() {
                 {items.map(item => (
                     <div key={item.id} className="flex items-center justify-between">
                         <div className="flex items-center gap-4">
-                            <Image src={item.product.imageUrl || ''} alt={item.product.name} width={64} height={64} className="rounded-md object-cover"/>
+                           {item.product.imageUrl && ( // Added check for imageUrl
+                             <Image src={item.product.imageUrl} alt={item.product.name} width={64} height={64} className="rounded-md object-cover"/>
+                           )}
                             <div>
                                 <p className="font-semibold">{item.product.name}</p>
                                 <p className="text-sm text-gray-600">Số lượng: {item.quantity}</p>
@@ -268,7 +300,7 @@ function CheckoutPageContent() {
   );
 }
 
-// --- Component export default giữ nguyên ---
+// --- Component export default ---
 export default function CheckoutPage() {
   return (
     <Suspense fallback={<div className="min-h-screen text-center py-10">Đang tải trang thanh toán...</div>}>

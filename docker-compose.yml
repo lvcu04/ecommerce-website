@@ -10,6 +10,8 @@ services:
       - NODE_ENV=production
       # Biến này không còn cần thiết nếu dùng proxy, nhưng để lại cũng không sao
       - NEXT_PUBLIC_API_URL=http://backend-web1:3001
+      # --- THÊM KHÓA PUBLIC CỦA STRIPE VÀO ĐÂY ---
+      - NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=pk_test_51SMstTP6GBqehqCCwPOjWWbhJr87nbn5y9X4uCb5dw9EwraTy69DME4pAgz3yCteWxQbzaUZ5ILGeMdr35JOLmYl00EuWBGgYL
 #giúp container lên đc dns google tải ảnh cloudinary 
     dns:
       - 8.8.8.8
@@ -34,6 +36,8 @@ services:
              npx prisma generate &&
              npx prisma db seed &&
              npm run start:dev"
+    # --- ĐÃ SỬA LỖI CÚ PHÁP: Di chuyển các biến này vào mục 'environment' ---
+    environment:
       - SERVER_ID=Web-Server-1
       - PORT=3001
       - NODE_ENV=development
