@@ -182,18 +182,68 @@ export class OrdersService {
 
   // Hàm mới cho Admin cập nhật trạng thái đơn hàng
   async updateStatus(id: number, status: string) {
-    // Kiểm tra xem đơn hàng có tồn tại không
-    const order = await this.prisma.order.findUnique({ where: { id } });
+    // 1. Định nghĩa các trạng thái
+    // (Giữ nguyên `canceled` (1 'l') và 'delivered' như code gốc của bạn)
+    const validStatuses = ['pending', 'processing', 'shipped', 'delivered', 'completed', 'canceled', 'returned'];
+    const restockStatuses = ['canceled', 'returned']; // Các trạng thái kích hoạt hoàn kho
+
+    if (!validStatuses.includes(status)) {
+      throw new BadRequestException(`Invalid status: ${status}`);
+    }
+
+    // 2. Lấy đơn hàng và các sản phẩm bên trong
+    const order = await this.prisma.order.findUnique({
+      where: { id },
+      include: {
+        orderItems: true, // QUAN TRỌNG: Lấy các sản phẩm để hoàn kho
+      },
+    });
+
     if (!order) {
       throw new NotFoundException(`Order with ID ${id} not found`);
     }
 
-    // (Tùy chọn) Thêm logic kiểm tra xem trạng thái mới có hợp lệ không
-    // Ví dụ: không cho phép chuyển từ "đã hủy" sang "đang giao"
+    const oldStatus = order.status;
 
-    return this.prisma.order.update({
-      where: { id },
-      data: { status },
-    });
+    // 3. Kiểm tra logic hoàn kho
+    // Chỉ hoàn kho nếu:
+    // - Trạng thái MỚI là 'canceled' hoặc 'returned'
+    // - VÀ Trạng thái CŨ CHƯA PHẢI là 'canceled' hoặc 'returned' (để tránh hoàn kho 2 lần)
+    const shouldRestock = restockStatuses.includes(status) && !restockStatuses.includes(oldStatus);
+
+    if (shouldRestock) {
+      // 4. Sử dụng Transaction để đảm bảo an toàn dữ liệu
+      // Hoặc hoàn tất cả, hoặc không làm gì cả
+      return this.prisma.$transaction(async (tx) => {
+        // 4a. Cộng lại số lượng tồn kho cho từng sản phẩm
+        const productRestockPromises = order.orderItems.map(item =>
+          tx.product.update({
+            where: { id: item.productId },
+            data: {
+              stock: {
+                increment: item.quantity, // Cộng (increment) số lượng trở lại
+              },
+            },
+          }),
+        );
+        
+        // Chờ tất cả sản phẩm được cập nhật
+        await Promise.all(productRestockPromises);
+
+        // 4b. Cập nhật trạng thái của đơn hàng
+        const updatedOrder = await tx.order.update({
+          where: { id },
+          data: { status },
+        });
+
+        return updatedOrder;
+      });
+    } else {
+      // 5. Nếu không cần hoàn kho (ví dụ: pending -> processing), chỉ cần cập nhật trạng thái
+      return this.prisma.order.update({
+        where: { id },
+        data: { status },
+      });
+    }
   }
 }
