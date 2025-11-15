@@ -30,7 +30,7 @@ export class CartController {
   ) {
     return this.cartService.updateQuantity(itemId, req.user.userId, quantity);
   }
-  @Delete(':/clear')
+  @Delete(':itemId')
   removeOne(@Param('itemId', ParseIntPipe) itemId: number, @Request() req) {
     return this.cartService.removeItemByItemId(itemId, req.user.userId);
   }

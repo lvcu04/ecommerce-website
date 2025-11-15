@@ -37,7 +37,7 @@ export class OrdersService {
         data: {
           userId,
           totalPrice: total,
-          address, // Lưu địa chỉ vào đơn hàng
+          address, 
           status: 'pending',
           orderItems: {
             create: cartItems.map((item) => ({

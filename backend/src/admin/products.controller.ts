@@ -24,11 +24,18 @@ export class ProductsController {
 
   @Get()
   findAll(
-    @Query('page') page: '1',
-    @Query('pageSize') pageSize: '10',
+    // 🌟 SỬA LỖI 1: Dùng dấu = (bằng) thay vì dấu : (hai chấm)
+    @Query('page') page = '1',
+    @Query('pageSize') pageSize = '10',
     @Query('search') search?: string,
   ){
-    return this.productsService.findAll(Number(page), Number(pageSize), search);
+    // 🌟 SỬA LỖI 2: Thêm 'undefined' làm tham số 'category'
+    return this.productsService.findAll(
+      Number(page),
+      Number(pageSize),
+      undefined, // << Tham số 'category' (không dùng trong admin)
+      search,    // << Tham số 'search'
+    );
   }
 
   //Lay chi tiet san pham

@@ -93,9 +93,9 @@ export default function AdminProductsPage() {
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{product.name}</td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{formatPrice(product.price)}</td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{product.stock}</td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">
+                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-4">
                   <Link href={`/admin/products/edit/${product.id}`} className="text-indigo-600 hover:text-indigo-900">Sửa</Link>
-                  <button onClick={() => handleDelete(product.id)} className="text-red-600 hover:text-red-900">Xóa</button>
+                  <button onClick={() => handleDelete(product.id)} className="text-red-600 hover:text-red-900 ">Xóa</button>
                 </td>
               </tr>
             ))}

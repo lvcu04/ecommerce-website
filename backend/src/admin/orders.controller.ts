@@ -28,26 +28,20 @@ export class OrdersController {
     @Query('pageSize') pageSize = '10',
     // Thêm các query param khác nếu cần lọc (ví dụ: status, userId)
     @Query('status') status?: string,
+    @Query('userId', new ParseIntPipe({ optional: true})) userId?: number,
   ) {
-    // Bạn cần thêm phương thức findAll vào OrdersService để hỗ trợ phân trang và lọc
-    // Ví dụ: return this.ordersService.findAllForAdmin({ page: Number(page), pageSize: Number(pageSize), status });
-    // Tạm thời gọi phương thức cũ findByUser với một ID admin giả định hoặc tạo hàm mới
-    // Đây chỉ là ví dụ, bạn cần implement logic lấy TẤT CẢ đơn hàng trong OrdersService
-    console.warn('Cần implement OrdersService.findAllForAdmin()');
-    return { message: 'API lấy tất cả đơn hàng cho admin (chưa implement)', page, pageSize, status };
-    // Hoặc nếu muốn lấy của 1 user cụ thể:
-    // return this.ordersService.findByUser(SOME_USER_ID);
+    return this.ordersService.findAllForAdmin({
+      page: Number(page),
+      pageSize: parseInt(pageSize, 10),
+      status,
+      userId,
+    });
   }
 
   // Lấy chi tiết một đơn hàng
   @Get(':id')
   findOne(@Param('id', ParseIntPipe) id: number) {
-    // Bạn có thể cần tạo phương thức findOneForAdmin trong OrdersService
-    // để bao gồm thông tin chi tiết hơn nếu cần
-    console.warn('Cần implement OrdersService.findOneForAdmin() nếu cần chi tiết hơn');
-     // Tạm thời chưa có hàm tìm theo ID, cần thêm vào OrdersService
-     return { message: `API lấy chi tiết đơn hàng ${id} (chưa implement)`};
-     // Ví dụ khi có hàm: return this.ordersService.findOneForAdmin(id);
+    return this.ordersService.findOneForAdmin(id);
   }
 
   // Cập nhật trạng thái đơn hàng
@@ -56,10 +50,7 @@ export class OrdersController {
     @Param('id', ParseIntPipe) id: number,
     @Body() body: { status: string }, // Nên tạo DTO và Enum cho status
   ) {
-     // Bạn cần thêm phương thức updateStatus vào OrdersService
-     // Ví dụ: return this.ordersService.updateStatus(id, body.status);
-     console.warn('Cần implement OrdersService.updateStatus()');
-     return { message: `API cập nhật trạng thái đơn hàng ${id} thành ${body.status} (chưa implement)`};
+    return this.ordersService.updateStatus(id, body.status);
   }
 
   // Các API khác cho admin nếu cần (ví dụ: xóa đơn hàng - cẩn thận khi implement)

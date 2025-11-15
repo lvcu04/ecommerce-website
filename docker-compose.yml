@@ -1,42 +1,49 @@
-version: '3.8'
-
 services:
   frontend:
     build:
       context: .
       dockerfile: ./Dockerfile
+      # 1. Dùng giai đoạn 'builder' (có node_modules)
+      target: builder 
+    
+    # 2. Chạy máy chủ dev
+    command: npm run dev 
+
     environment:
       - PORT=3000
-      - NODE_ENV=production
-      # Biến này không còn cần thiết nếu dùng proxy, nhưng để lại cũng không sao
+      # 3. Chuyển sang môi trường development
+      - NODE_ENV=development 
       - NEXT_PUBLIC_API_URL=http://backend-web1:3001
-      # --- THÊM KHÓA PUBLIC CỦA STRIPE VÀO ĐÂY ---
       - NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=pk_test_51SMstTP6GBqehqCCwPOjWWbhJr87nbn5y9X4uCb5dw9EwraTy69DME4pAgz3yCteWxQbzaUZ5ILGeMdr35JOLmYl00EuWBGgYL
-#giúp container lên đc dns google tải ảnh cloudinary 
     dns:
       - 8.8.8.8
     ports:
       - "3000:3000"
     expose:
       - "3000"
+    
+    # 4. Thêm volumes để đồng bộ code
+    volumes:
+      - ./:/app
+      - /app/node_modules
+      - /app/.next
+    
     restart: always
     networks:
       - app-network
     depends_on:
-      - backend-web1 # Chỉ phụ thuộc vào một backend
+      - backend-web1
 
   backend-web1:
     build: ./backend
     env_file:
       - ./.env.backend
-    # --- THAY ĐỔI COMMAND ĐỂ REBUILD BCRYPT ---
     command: >
       sh -c "npm rebuild bcrypt --build-from-source && 
              npx prisma migrate deploy &&
              npx prisma generate &&
              npx prisma db seed &&
              npm run start:dev"
-    # --- ĐÃ SỬA LỖI CÚ PHÁP: Di chuyển các biến này vào mục 'environment' ---
     environment:
       - SERVER_ID=Web-Server-1
       - PORT=3001
@@ -47,10 +54,11 @@ services:
       - "3001:3001"
     volumes:
       - ./backend:/app
-      - /app/node_modules # Dòng này vẫn cần thiết để tách biệt node_modules
+      - /app/node_modules 
     restart: always
     depends_on:
       db:
+        # 5. Phụ thuộc vào healthcheck
         condition: service_healthy
     networks:
       - app-network
@@ -67,6 +75,7 @@ services:
     ports:
       - "5433:5432"
     healthcheck:
+      # 🌟 SỬA LỖI: Xóa 1 chữ 'G' thừa trong 'POSTGGRES_USER'
       test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
       interval: 5s
       timeout: 5s
