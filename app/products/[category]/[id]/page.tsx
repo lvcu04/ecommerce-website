@@ -7,6 +7,7 @@ import Image from 'next/image';
 import { Product, Review } from '@/app/(types)';
 import { authFetch } from '@/app/utils/authFetch';
 import starIcon from '@/app/assets/icon/star.png'; // Import ảnh sao
+import Link from 'next/link';
 
 // Định dạng giá tiền
 const formatPrice = (price: number) => {
@@ -26,35 +27,25 @@ const GALLERY_IMAGES = [
   'https://supersports.com.vn/cdn/shop/files/432997-107-8.jpg?v=1757327039&width=1000',
 ];
 
-// Removed unused 'rating' prop from destructuring
+// Component StarRating (giữ nguyên)
 const StarRating = ({ rating }: { rating: number }) => {
-  // Determine the number of full stars
   const fullStars = Math.floor(rating);
-  // Determine if there is a half star (optional, depending on how you want to handle non-integers)
-  // const hasHalfStar = rating % 1 !== 0; // Uncomment if you want half stars
-
   return (
     <div className="flex items-center">
       {[...Array(5)].map((_, index) => {
         const starValue = index + 1;
-        let starType = 'empty'; // Default to empty
+        let starType = 'empty';
         if (starValue <= fullStars) {
           starType = 'full';
         }
-        // Add logic for half stars if needed
-        // else if (hasHalfStar && starValue === fullStars + 1) {
-        //   starType = 'half';
-        // }
-
         return (
           <Image
             key={index}
-            src={starIcon} // Assuming starIcon is the full star
+            src={starIcon}
             alt={`${starType} star`}
             width={16}
             height={16}
-            className={starType === 'full' ? 'opacity-100' : 'opacity-30'} // Example: Dim empty stars
-            // Add different images or styles for half/empty stars if desired
+            className={starType === 'full' ? 'opacity-100' : 'opacity-30'}
           />
         );
       })}
@@ -62,12 +53,124 @@ const StarRating = ({ rating }: { rating: number }) => {
   );
 };
 
+// --- START: Component Form Đánh giá ---
+const ReviewForm = ({ productId, onReviewSubmitted }: { productId: number; onReviewSubmitted: () => void }) => {
+  const [rating, setRating] = useState(0);
+  const [comment, setComment] = useState('');
+  const [error, setError] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [hoverRating, setHoverRating] = useState(0);
+  const router = useRouter();
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (rating === 0) {
+      setError('Vui lòng chọn số sao đánh giá.');
+      return;
+    }
+    
+    setIsSubmitting(true);
+    setError('');
+
+    try {
+      const res = await authFetch('/api/reviews', {
+        method: 'POST',
+        body: JSON.stringify({
+          productId: productId,
+          rating: rating,
+          comment: comment,
+        }),
+      }, router);
+
+      if (!res) return; // authFetch đã xử lý 401
+
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.message || 'Gửi đánh giá thất bại.');
+      }
+
+      // Thành công!
+      alert('Cảm ơn bạn đã đánh giá sản phẩm!');
+      setRating(0);
+      setComment('');
+      onReviewSubmitted(); // Gọi hàm callback để tải lại danh sách đánh giá
+
+    } catch (err: unknown) {
+      if ((err as Error).message !== 'Unauthorized') {
+        setError((err as Error).message);
+      }
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  return (
+    <div className="mb-8 p-6 bg-gray-50 rounded-lg shadow-sm">
+      <h3 className="text-xl font-semibold mb-4">Để lại đánh giá của bạn</h3>
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">Đánh giá (*)</label>
+          <div className="flex items-center space-x-1">
+            {[1, 2, 3, 4, 5].map((star) => (
+              <button
+                type="button"
+                key={star}
+                onClick={() => setRating(star)}
+                onMouseEnter={() => setHoverRating(star)}
+                onMouseLeave={() => setHoverRating(0)}
+                className="focus:outline-none"
+              >
+                <Image
+                  src={starIcon}
+                  alt={`${star} star`}
+                  width={24}
+                  height={24}
+                  className={`cursor-pointer transition-opacity ${
+                    (hoverRating || rating) >= star ? 'opacity-100' : 'opacity-30'
+                  }`}
+                />
+              </button>
+            ))}
+          </div>
+        </div>
+        <div>
+          <label htmlFor="comment" className="block text-sm font-medium text-gray-700">
+            Bình luận (tùy chọn)
+          </label>
+          <textarea
+            id="comment"
+            value={comment}
+            onChange={(e) => setComment(e.target.value)}
+            rows={4}
+            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-lime-500 focus:ring-lime-500"
+            placeholder="Chia sẻ cảm nhận của bạn về sản phẩm..."
+          />
+        </div>
+
+        {error && <p className="text-sm text-red-500">{error}</p>}
+
+        <div>
+          <button
+            type="submit"
+            disabled={isSubmitting || rating === 0}
+            className="bg-lime-600 text-white py-2 px-5 rounded-full font-semibold hover:bg-lime-700 disabled:opacity-50"
+          >
+            {isSubmitting ? 'Đang gửi...' : 'Gửi đánh giá'}
+          </button>
+        </div>
+      </form>
+    </div>
+  );
+};
+// --- END: Component Form Đánh giá ---
+
+
 const ProductNestedDetailPage = () => {
   const [product, setProduct] = useState<Product | null>(null);
   const [reviews, setReviews] = useState<Review[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [quantity, setQuantity] = useState(1);
-  const [selectedSize, setSelectedSize] = useState<string | null>(null); // State mới cho size // highlight-line
+  const [selectedSize, setSelectedSize] = useState<string | null>(null);
   const [addToCartMessage, setAddToCartMessage] = useState('');
   const [mainImage, setMainImage] = useState<string | null>(null);
   const params = useParams();
@@ -77,30 +180,28 @@ const ProductNestedDetailPage = () => {
   const productId = Number(id);
 
   const getToken = () => typeof window !== 'undefined' ? localStorage.getItem('accessToken') : null;
+  const isLoggedIn = !!getToken(); // <-- Thêm biến kiểm tra đăng nhập
 
     useEffect(() => {
     if (isNaN(productId)) {
         setIsLoading(false);
-        setProduct(null); // Set product to null if ID is invalid
+        setProduct(null); 
         return;
     }
 
     async function fetchProduct() {
       setIsLoading(true);
-      setProduct(null); // Reset product state on new fetch
-      setMainImage(null); // Reset main image
+      setProduct(null); 
+      setMainImage(null); 
       try {
         const token = getToken();
         const url = `/api/products/${productId}`;
         const headers: HeadersInit = { 'Content-Type': 'application/json' };
 
-        // No need for Authorization header if GET /api/products/:id is public
-
-        const res = await fetch(url, { headers }); // Removed Authorization header if not needed
+        const res = await fetch(url, { headers }); 
 
         if (!res.ok) {
             if (res.status === 404) {
-                // Product not found, state already null
                 return;
             }
             throw new Error(`Error: ${res.status} ${res.statusText}`);
@@ -109,28 +210,24 @@ const ProductNestedDetailPage = () => {
         const data = await res.json();
         setProduct(data);
 
-        // --- Initialize main image ---
         if (data.imageUrl) {
             setMainImage(data.imageUrl);
         } else {
-            // Fallback if no image
             setMainImage('https://placehold.co/600x400/EEE/31343C?text=No+Image');
         }
-        // ----------------------------------------
 
       } catch (error) {
         console.error('Fetch error:', error);
-        // Product state remains null
       } finally {
         setIsLoading(false);
       }
     }
 
     fetchProduct();
-  }, [productId]); // Removed router from dependencies if not needed for public fetch
+  }, [productId]); 
 
 
-  // Logic Thêm vào Giỏ Hàng
+  // Logic Thêm vào Giỏ Hàng (giữ nguyên)
   const handleAddToCart = useCallback(async () => {
     if (!product || quantity <= 0) return;
     if (!selectedSize) {
@@ -159,54 +256,49 @@ const ProductNestedDetailPage = () => {
           body: JSON.stringify({
             productId: product.id,
             quantity: quantity,
-            // size: selectedSize, // Include size if backend expects it
           }),
         },
         router // Pass router
       );
 
-      // No need to check response.ok here, authFetch throws 'Unauthorized'
-      // if (response && !response.ok) { // Check if response exists before accessing ok
-      //   const errorData = await response.json();
-      //   throw new Error(errorData.message || 'Thêm vào giỏ hàng thất bại.');
-      // }
-
-      if(response) { // Only proceed if authFetch didn't throw/redirect
+      if(response) { 
           setAddToCartMessage(`Đã thêm ${quantity} sản phẩm ${selectedSize ? `(Size: ${selectedSize})` : ''} vào giỏ hàng!`);
           setTimeout(() => setAddToCartMessage(''), 2000);
-          // Optionally refresh cart data or show a cart preview
       }
 
     } catch (error: unknown) {
       const errorMessage = (error as Error).message;
-      if (errorMessage !== 'Unauthorized') { // Don't show error if already handled
+      if (errorMessage !== 'Unauthorized') { 
         setAddToCartMessage(`Lỗi: ${errorMessage}`);
-        setTimeout(() => setAddToCartMessage(''), 3000); // Show error longer
+        setTimeout(() => setAddToCartMessage(''), 3000); 
       } else {
-         setAddToCartMessage(''); // Clear "Đang thêm..." if unauthorized
+         setAddToCartMessage(''); 
       }
     }
   }, [product, quantity, router, selectedSize]);
 
-// useEffect mới để fetch reviews
+// --- START: Hàm fetch reviews (tách riêng) ---
+  const fetchReviews = useCallback(async () => {
+    if (isNaN(productId)) return; 
+
+    try {
+      const res = await fetch(`/api/reviews/product/${productId}`);
+      if (!res.ok) throw new Error('Không thể tải đánh giá');
+      const data = await res.json();
+      setReviews(data);
+    } catch (error) {
+      console.error('Fetch reviews error:', error);
+      setReviews([]); 
+    }
+  }, [productId]); // <-- Chỉ phụ thuộc vào productId
+// --- END: Hàm fetch reviews ---
+
+  // useEffect để fetch reviews (chỉ chạy 1 lần)
   useEffect(() => {
-    if (isNaN(productId)) return; // Check if productId is valid number
-
-    const fetchReviews = async () => {
-      try {
-        const res = await fetch(`/api/reviews/product/${productId}`);
-        if (!res.ok) throw new Error('Không thể tải đánh giá');
-        const data = await res.json();
-        setReviews(data);
-      } catch (error) {
-        console.error('Fetch reviews error:', error);
-        setReviews([]); // Set to empty array on error
-      }
-    };
-
     fetchReviews();
-  }, [productId]);
+  }, [fetchReviews]); // <-- Sử dụng hàm fetchReviews
 
+  // Logic Mua ngay (giữ nguyên)
   const handleBuyNow = useCallback(() => {
     if (!product) return;
     if (!selectedSize) {
@@ -220,20 +312,17 @@ const ProductNestedDetailPage = () => {
       router.push('/login?redirect=/checkout?productId=' + product.id + '&quantity=' + quantity + '&size=' + selectedSize); // Redirect with target
       return;
     }
-
-    // Chuyển hướng đến trang checkout với thông tin sản phẩm
     router.push(`/checkout?productId=${product.id}&quantity=${quantity}&size=${selectedSize}`);
   }, [product, quantity, selectedSize, router]);
 
 
-  // Cập nhật hàm xử lý tăng/giảm số lượng
-  const handleQuantityChange = (type: 'increment' | 'decrement') => { // highlight-start
+  // Hàm xử lý tăng/giảm số lượng (giữ nguyên)
+  const handleQuantityChange = (type: 'increment' | 'decrement') => { 
     const newQuantity = type === 'increment' ? quantity + 1 : quantity - 1;
-    // Ensure quantity doesn't go below 1 or exceed stock
     if (newQuantity >= 1 && newQuantity <= (product?.stock ?? 1)) {
       setQuantity(newQuantity);
     }
-  }; // highlight-end
+  }; 
 
   // --- Render UI ---
 
@@ -259,56 +348,54 @@ const ProductNestedDetailPage = () => {
   return (
     <div className="container mx-auto px-4 py-12 min-h-screen">
       <div className="flex flex-col lg:flex-row gap-12">
+        {/* Cột Ảnh (giữ nguyên) */}
         <div className="lg:w-1/2">
-
-        {/* Ảnh Chính */}
-        <div className="relative h-96 md:h-[500px] overflow-hidden mb-4 bg-gray-100 rounded">
-            {mainImage ? (
-                <Image
-                    src={mainImage}
-                    alt={product.name}
-                    fill
-                    sizes="(max-width: 1024px) 100vw, 50vw"
-                    className="object-contain transition-opacity duration-300"
-                    priority
-                    onError={() => setMainImage('https://placehold.co/600x400/EEE/31343C?text=Image+Error')} // Handle image load error
-                />
-            ) : (
-                <div className="flex items-center justify-center h-full text-gray-500">Loading image...</div>
-            )}
-        </div>
-
-        {/* Ảnh nhỏ Gallery */}
-        <div className="flex justify-start gap-2 overflow-x-auto pb-2">
-            {[product.imageUrl, ...GALLERY_IMAGES.filter(src => src !== product.imageUrl)]
-             .filter((src): src is string => typeof src === 'string' && src.trim() !== '') // Ensure only valid strings
-             .map((src, index) => (
-                <div
-                    key={index}
-                    onClick={() => setMainImage(src)}
-                    className={`
-                        relative w-20 h-20 min-w-[80px] cursor-pointer border-2 rounded-md overflow-hidden transition-all duration-200 bg-gray-100
-                        ${mainImage === src ? 'border-lime-600' : 'border-gray-200 hover:border-gray-400'}
-                    `}
-                >
+            {/* Ảnh Chính */}
+            <div className="relative h-96 md:h-[500px] overflow-hidden mb-4 bg-gray-100 rounded">
+                {mainImage ? (
                     <Image
-                        src={src}
-                        alt={`${product.name} thumbnail ${index + 1}`}
+                        src={mainImage}
+                        alt={product.name}
                         fill
-                        sizes="80px"
-                        className="object-cover"
-                         onError={(e) => (e.currentTarget.style.display = 'none')} // Hide thumbnail on error
+                        sizes="(max-width: 1024px) 100vw, 50vw"
+                        className="object-contain transition-opacity duration-300"
+                        priority
+                        onError={() => setMainImage('https://placehold.co/600x400/EEE/31343C?text=Image+Error')}
                     />
-                </div>
-            ))}
+                ) : (
+                    <div className="flex items-center justify-center h-full text-gray-500">Loading image...</div>
+                )}
+            </div>
+
+            {/* Ảnh nhỏ Gallery */}
+            <div className="flex justify-start gap-2 overflow-x-auto pb-2">
+                {[product.imageUrl, ...GALLERY_IMAGES.filter(src => src !== product.imageUrl)]
+                 .filter((src): src is string => typeof src === 'string' && src.trim() !== '') 
+                 .map((src, index) => (
+                    <div
+                        key={index}
+                        onClick={() => setMainImage(src)}
+                        className={`
+                            relative w-20 h-20 min-w-[80px] cursor-pointer border-2 rounded-md overflow-hidden transition-all duration-200 bg-gray-100
+                            ${mainImage === src ? 'border-lime-600' : 'border-gray-200 hover:border-gray-400'}
+                        `}
+                    >
+                        <Image
+                            src={src}
+                            alt={`${product.name} thumbnail ${index + 1}`}
+                            fill
+                            sizes="80px"
+                            className="object-cover"
+                             onError={(e) => (e.currentTarget.style.display = 'none')} 
+                        />
+                    </div>
+                ))}
+            </div>
         </div>
-    </div>
 
-
-        {/* Cột Thông tin chi tiết */}
+        {/* Cột Thông tin chi tiết (giữ nguyên) */}
         <div className="lg:w-1/2">
           <h1 className="text-4xl font-bold text-gray-900  mb-4">{product.name}</h1>
-
           <p className="text-3xl font-extrabold text-lime-600 mb-6">
             {formatPrice(product.price)}
           </p>
@@ -330,16 +417,16 @@ const ProductNestedDetailPage = () => {
                   `}
                   disabled={isOutOfStock}
                 >
-                  {size} {/* Simplified display */}
+                  {size}
                 </button>
               ))}
             </div>
             {/* Link hướng dẫn chọn size */}
-            <div className="flex justify-end mt-3"> {/* Added margin-top */}
+            <div className="flex justify-end mt-3">
               <a
-                href="#" // Replace with actual link
+                href="#" 
                 className="flex items-center gap-1 text-sm text-lime-600 hover:underline transition-colors"
-                target="_blank" // Open in new tab if external link
+                target="_blank" 
                 rel="noopener noreferrer"
               >
                 <Image
@@ -352,7 +439,6 @@ const ProductNestedDetailPage = () => {
               </a>
             </div>
           </div>
-
 
           <div className="mb-6">
             <h2 className="text-xl font-semibold mb-2">Mô tả sản phẩm</h2>
@@ -369,8 +455,6 @@ const ProductNestedDetailPage = () => {
 
           {/* Form Số lượng và Thêm vào Giỏ hàng */}
           <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4 border-t pt-6">
-
-            {/* Control Số lượng */}
             <div className="flex items-center space-x-0 border border-gray-300 dark:border-gray-700 rounded-md">
               <button
                 onClick={() => handleQuantityChange('decrement')}
@@ -381,23 +465,23 @@ const ProductNestedDetailPage = () => {
                 -
               </button>
               <input
-                type="number" // Use type="number" for better semantics/mobile keyboards
+                type="number"
                 value={quantity}
                 min="1"
-                max={currentStock > 0 ? currentStock : 1} // Prevent exceeding stock
+                max={currentStock > 0 ? currentStock : 1}
                 disabled={isOutOfStock}
                  onChange={(e) => {
                     const value = parseInt(e.target.value, 10);
                     const maxStock = product?.stock ?? 0;
                     if (isNaN(value) || value < 1) {
-                        setQuantity(1); // Reset to 1 if invalid or less than 1
+                        setQuantity(1);
                     } else if (value > maxStock && maxStock > 0) {
-                        setQuantity(maxStock); // Set to max stock if exceeded
+                        setQuantity(maxStock);
                     } else {
                         setQuantity(value);
                     }
                 }}
-                className="w-16 h-10 text-center border-y border-gray-300 dark:border-gray-700 focus:outline-none focus:ring-1 focus:ring-lime-500 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none" // Hide number arrows
+                className="w-16 h-10 text-center border-y border-gray-300 dark:border-gray-700 focus:outline-none focus:ring-1 focus:ring-lime-500 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                  aria-label="Số lượng sản phẩm"
                 />
               <button
@@ -409,8 +493,6 @@ const ProductNestedDetailPage = () => {
                 +
               </button>
             </div>
-
-            {/* Nút Mua Ngay và Thêm vào Giỏ */}
             <div className='flex-1 flex flex-col sm:flex-row gap-4'>
                 <button
                   disabled={isOutOfStock || !selectedSize}
@@ -435,7 +517,7 @@ const ProductNestedDetailPage = () => {
             </p>
           )}
 
-          {/* Vận chuyển và ưu đãi */}
+          {/* Vận chuyển và ưu đãi (giữ nguyên) */}
           <div className='mt-6 text-sm space-y-3 border-t pt-6'>
               <p>📦 Miễn phí giao hàng đơn từ 699k <a href="#" className='text-lime-600 hover:underline cursor-pointer'>Xem chi tiết</a></p>
               <p>🔄 Đổi trả miễn phí đến 30 ngày <a href="#" className='text-lime-600 hover:underline cursor-pointer'>Xem chi tiết</a></p>
@@ -445,23 +527,32 @@ const ProductNestedDetailPage = () => {
           </div>
         </div>
       </div>
-      {/* Phần đánh giá sản phẩm */}
+
+      {/* --- START: Phần đánh giá sản phẩm (CẬP NHẬT) --- */}
       <div className="mt-12 border-t pt-10">
         <h2 className="text-2xl font-bold mb-6">Đánh giá sản phẩm</h2>
 
-        {/* Form để lại đánh giá (TODO: Add logic) */}
-        {/* <div className="mb-8 p-6 bg-gray-50 rounded-lg"> ... </div> */}
+        {/* Form để lại đánh giá (Chỉ hiển thị khi đã đăng nhập) */}
+        {isLoggedIn ? (
+          <ReviewForm productId={productId} onReviewSubmitted={fetchReviews} />
+        ) : (
+          <div className="mb-8 p-6 bg-gray-50 rounded-lg text-center">
+            <p className="text-gray-600">
+              Vui lòng <Link href={`/login?redirect=/products/${params.category}/${productId}`} className="text-lime-600 font-semibold hover:underline">đăng nhập</Link> để để lại đánh giá.
+            </p>
+          </div>
+        )}
 
-        {/* Danh sách các đánh giá */}
+        {/* Danh sách các đánh giá (giữ nguyên) */}
         <div className="space-y-6">
           {reviews.length > 0 ? (
             reviews.map((review) => (
               <div key={review.id} className="border-b pb-4">
                 <div className="flex items-center mb-2">
                   <StarRating rating={review.rating} />
-                  <p className="ml-4 font-bold">{review.user?.name || 'Người dùng ẩn danh'}</p> {/* Added optional chaining */}
+                  <p className="ml-4 font-bold">{review.user?.name || 'Người dùng ẩn danh'}</p>
                 </div>
-                {review.comment && <p className="text-gray-600">{review.comment}</p>} {/* Only render if comment exists */}
+                {review.comment && <p className="text-gray-600">{review.comment}</p>}
                 <p className="text-xs text-gray-400 mt-2">{new Date(review.createdAt).toLocaleDateString('vi-VN')}</p>
               </div>
             ))
@@ -470,6 +561,7 @@ const ProductNestedDetailPage = () => {
           )}
         </div>
       </div>
+       {/* --- END: Phần đánh giá sản phẩm --- */}
     </div>
   );
 };
