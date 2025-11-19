@@ -16,4 +16,8 @@ export class ReviewsController {
   findByProduct(@Param('productId', ParseIntPipe) productId: number) {
     return this.reviewsService.findByProduct(productId);
   }
+  @Get('stats/:productId')
+  getStats(@Param('productId', ParseIntPipe) productId: number) {
+    return this.reviewsService.getProductStats(productId);
+  }
 }

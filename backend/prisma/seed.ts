@@ -67,6 +67,14 @@ async function main() {
         imageUrl: 'https://res.cloudinary.com/dlwginyxy/image/upload/v1759566220/zu85zxog8dkzcmxc3qls.webp',
         categoryId: category1.id,
       },
+      {
+        name: 'Giày Sneaker Nam Nike Big Low - Trắng',
+        description: 'Chất liệu thoáng mát, co giãn tốt.',
+        price: 3100000,
+        stock: 50,
+        imageUrl: 'https://res.cloudinary.com/dlwginyxy/image/upload/v1763365222/ictffeuvhhnp6o8ia5kt.webp',
+        categoryId: category1.id,
+      },
      
     ],
   });

@@ -20,7 +20,7 @@ export class ReviewsService {
     });
 
     if (!hasPurchased) {
-      throw new UnauthorizedException('Bạn phải mua sản phẩm này trước khi có thể đánh giá.');
+      throw new BadRequestException('Bạn phải mua sản phẩm này trước khi có thể đánh giá.');
     }
 
     // 2. Kiểm tra xem người dùng đã đánh giá sản phẩm này chưa
@@ -60,5 +60,17 @@ export class ReviewsService {
         createdAt: 'desc',
       },
     });
+  }
+  async getProductStats(productId: number) {
+    const aggregations = await this.prisma.review.aggregate({
+      where: { productId },
+      _avg: { rating: true },
+      _count: { rating: true },
+    });
+
+    return {
+      averageRating: aggregations._avg.rating || 0,
+      totalReviews: aggregations._count.rating || 0,
+    };
   }
 }

@@ -60,6 +60,7 @@ const ReviewForm = ({ productId, onReviewSubmitted }: { productId: number; onRev
   const [error, setError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [hoverRating, setHoverRating] = useState(0);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
   const router = useRouter();
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -103,6 +104,11 @@ const ReviewForm = ({ productId, onReviewSubmitted }: { productId: number; onRev
       setIsSubmitting(false);
     }
   };
+  useEffect(() => {
+    // Chỉ chạy trên trình duyệt
+    const token = localStorage.getItem('accessToken');
+    setIsLoggedIn(!!token);
+  }, []);
 
   return (
     <div className="mb-8 p-6 bg-gray-50 rounded-lg shadow-sm">
@@ -173,6 +179,7 @@ const ProductNestedDetailPage = () => {
   const [selectedSize, setSelectedSize] = useState<string | null>(null);
   const [addToCartMessage, setAddToCartMessage] = useState('');
   const [mainImage, setMainImage] = useState<string | null>(null);
+  const [reviewStats, setReviewStats] = useState({ averageRating: 0, totalReviews: 0 });
   const params = useParams();
   const router = useRouter();
 
@@ -278,20 +285,28 @@ const ProductNestedDetailPage = () => {
   }, [product, quantity, router, selectedSize]);
 
 // --- START: Hàm fetch reviews (tách riêng) ---
-  const fetchReviews = useCallback(async () => {
+ const fetchReviews = useCallback(async () => {
     if (isNaN(productId)) return; 
 
     try {
-      const res = await fetch(`/api/reviews/product/${productId}`);
-      if (!res.ok) throw new Error('Không thể tải đánh giá');
-      const data = await res.json();
-      setReviews(data);
+      // 1. Lấy danh sách review
+      const resReviews = await fetch(`/api/reviews/product/${productId}`);
+      if (!resReviews.ok) throw new Error('Không thể tải đánh giá');
+      const dataReviews = await resReviews.json();
+      setReviews(dataReviews);
+
+      // 2. 🌟 Lấy thống kê review (API mới)
+      const resStats = await fetch(`/api/reviews/stats/${productId}`);
+      if (resStats.ok) {
+          const dataStats = await resStats.json();
+          setReviewStats(dataStats);
+      }
+
     } catch (error) {
       console.error('Fetch reviews error:', error);
       setReviews([]); 
     }
-  }, [productId]); // <-- Chỉ phụ thuộc vào productId
-// --- END: Hàm fetch reviews ---
+  }, [productId]);
 
   // useEffect để fetch reviews (chỉ chạy 1 lần)
   useEffect(() => {
@@ -530,20 +545,30 @@ const ProductNestedDetailPage = () => {
 
       {/* --- START: Phần đánh giá sản phẩm (CẬP NHẬT) --- */}
       <div className="mt-12 border-t pt-10">
-        <h2 className="text-2xl font-bold mb-6">Đánh giá sản phẩm</h2>
+        <div className="flex items-center gap-4 mb-6">
+            <h2 className="text-2xl font-bold">Đánh giá sản phẩm</h2>
+            {reviewStats.totalReviews > 0 && (
+                <div className="flex items-center bg-lime-50 px-3 py-1 rounded-full border border-lime-200">
+                    <span className="text-xl font-bold text-lime-700 mr-1">{reviewStats.averageRating.toFixed(1)}</span>
+                    <Image src={starIcon} alt="star" width={16} height={16} />
+                    <span className="text-sm text-gray-500 ml-2">({reviewStats.totalReviews} lượt)</span>
+                </div>
+            )}
+        </div>
 
-        {/* Form để lại đánh giá (Chỉ hiển thị khi đã đăng nhập) */}
+        {/* Form để lại đánh giá */}
+        {/* Biến isLoggedIn giờ là state, sẽ cập nhật đúng khi trang tải xong */}
         {isLoggedIn ? (
           <ReviewForm productId={productId} onReviewSubmitted={fetchReviews} />
         ) : (
-          <div className="mb-8 p-6 bg-gray-50 rounded-lg text-center">
+          <div className="mb-8 p-6 bg-gray-50 rounded-lg text-center border border-gray-200">
             <p className="text-gray-600">
               Vui lòng <Link href={`/login?redirect=/products/${params.category}/${productId}`} className="text-lime-600 font-semibold hover:underline">đăng nhập</Link> để để lại đánh giá.
             </p>
           </div>
         )}
 
-        {/* Danh sách các đánh giá (giữ nguyên) */}
+        {/* Danh sách các đánh giá */}
         <div className="space-y-6">
           {reviews.length > 0 ? (
             reviews.map((review) => (
@@ -557,11 +582,10 @@ const ProductNestedDetailPage = () => {
               </div>
             ))
           ) : (
-            <p className="text-gray-500">Chưa có đánh giá nào cho sản phẩm này.</p>
+            <p className="text-gray-500 italic">Chưa có đánh giá nào cho sản phẩm này.</p>
           )}
         </div>
       </div>
-       {/* --- END: Phần đánh giá sản phẩm --- */}
     </div>
   );
 };
