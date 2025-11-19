@@ -1,4 +1,4 @@
-// src/app.module.ts
+// backend/src/app.module.ts
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { PrismaService } from './prisma.service';
@@ -12,6 +12,10 @@ import { UploadModule } from './upload/upload.module';
 import { ReviewsModule } from './reviews/reviews.module';
 import { AdminModule } from './admin/admin.module';
 import { PaymentsModule } from './payments/payments.module';
+
+// 👇 1. Import CategoriesModule
+import { CategoriesModule } from './categories/categories.module'; 
+
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -25,8 +29,9 @@ import { PaymentsModule } from './payments/payments.module';
     CloudinaryModule,
     UploadModule,
     ReviewsModule,
-    AdminModule, 
+    AdminModule,
     PaymentsModule,
+    CategoriesModule, // 👈 2. Thêm CategoriesModule vào đây
   ],
   providers: [PrismaService],
 })

@@ -1,4 +1,4 @@
-// app/components/admin/AdminProductForm.tsx
+// lvcu04/ecommerce-website/ecommerce-website-21ba000dee4642533ba7d4091745d3881c398ce1/app/components/admin/AdminProductForm.tsx
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -40,23 +40,18 @@ export default function AdminProductForm({ initialData = null, isEditing = false
   useEffect(() => {
     const fetchCategories = async () => {
       try {
-        // Tạm lấy categories từ API products.
-        // LƯU Ý: Tốt nhất là tạo một API /api/categories riêng
-        const res = await fetch('/api/products?pageSize=1000'); 
-        if (!res.ok) throw new Error('Không thể tải danh mục');
-        const data = await res.json();
+        // Cập nhật: Gọi API /api/categories riêng
+        const res = await fetch('/api/categories'); 
+        if (!res.ok) throw new Error('Không thể tải danh mục.');
         
-        const uniqueCategories = data.products.reduce((acc: Category[], product: Product & { category: Category }) => {
-            if (product.category && !acc.some(cat => cat.id === product.category.id)) {
-                acc.push(product.category);
-            }
-            return acc;
-        }, []);
+        // Cập nhật: API /api/categories trả về mảng Category[] trực tiếp
+        const data: Category[] = await res.json(); 
         
-        setCategories(uniqueCategories);
+        // Loại bỏ logic reduce phức tạp, chỉ cần set state trực tiếp
+        setCategories(data);
         
-        if (!isEditing && uniqueCategories.length > 0) {
-            setCategoryId(String(uniqueCategories[0].id));
+        if (!isEditing && data.length > 0) {
+            setCategoryId(String(data[0].id));
         }
       } catch (err) {
         console.error("Lỗi tải danh mục:", err);
