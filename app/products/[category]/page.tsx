@@ -5,7 +5,7 @@ import { useEffect, useState } from 'react';
 import { useRouter, useParams, useSearchParams } from 'next/navigation';
 import ProductCard from '@/app/components/products/ProductCard';
 import { Product } from '@/app/(types)';
-
+import Skeleton from '@/app/components/ui/Skeleton';
 const categoryMap: { [key: string]: string } = {
   'men': 'Nam',
   'women': 'Nữ',
@@ -61,12 +61,21 @@ export default function ProductPage() {
   };
 
   if (isLoading) {
-    return (
-      <div className="flex min-h-screen items-center justify-center">
-        <p className="text-gray-500">Đang tải...</p>
+  return (
+    <div className="container mx-auto px-4 py-12">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8">
+        {/* Render 8 cái khung xương giả lập sản phẩm */}
+        {[...Array(8)].map((_, i) => (
+          <div key={i} className="border rounded-lg p-4 space-y-3">
+            <Skeleton className="h-48 w-full" /> {/* Ảnh */}
+            <Skeleton className="h-4 w-3/4" />   {/* Tên */}
+            <Skeleton className="h-4 w-1/2" />   {/* Giá */}
+          </div>
+        ))}
       </div>
-    );
-  }
+    </div>
+  );
+}
 
   if (!categoryName) {
     return (

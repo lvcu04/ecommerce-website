@@ -1,4 +1,3 @@
-// Fix for: lvcu04/ecommerce-website/ecommerce-website-f1ee64a7e55e72b83449b939107f70e01a0e999d/app/products/[category]/[id]/page.tsx
 'use client';
 
 import { useEffect, useState, useCallback } from 'react';
@@ -6,17 +5,18 @@ import { useParams, useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { Product, Review } from '@/app/(types)';
 import { authFetch } from '@/app/utils/authFetch';
-import starIcon from '@/app/assets/icon/star.png'; // Import ảnh sao
+import starIcon from '@/app/assets/icon/star.png';
 import Link from 'next/link';
+import toast from 'react-hot-toast';
+import { useCartStore } from '@/app/store/useCartStore';
 
 // Định dạng giá tiền
 const formatPrice = (price: number) => {
   return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(price);
 };
 
-// Dữ liệu giả định cho Kích thước (Size)
+// Dữ liệu giả định
 const AVAILABLE_SIZES = ['S', 'M', 'L', 'XL', 'XXL'];
-// Ảnh gallery giả định
 const GALLERY_IMAGES = [
   'https://supersports.com.vn/cdn/shop/files/432997-107-3.jpg?v=1757327038',
   'https://supersports.com.vn/cdn/shop/files/432997-107-2.jpg?v=1757327039',
@@ -27,17 +27,14 @@ const GALLERY_IMAGES = [
   'https://supersports.com.vn/cdn/shop/files/432997-107-8.jpg?v=1757327039&width=1000',
 ];
 
-// Component StarRating (giữ nguyên)
+// Component StarRating
 const StarRating = ({ rating }: { rating: number }) => {
   const fullStars = Math.floor(rating);
   return (
     <div className="flex items-center">
       {[...Array(5)].map((_, index) => {
         const starValue = index + 1;
-        let starType = 'empty';
-        if (starValue <= fullStars) {
-          starType = 'full';
-        }
+        const starType = starValue <= fullStars ? 'full' : 'empty';
         return (
           <Image
             key={index}
@@ -53,25 +50,23 @@ const StarRating = ({ rating }: { rating: number }) => {
   );
 };
 
-// --- START: Component Form Đánh giá ---
+// --- Component Form Đánh giá (Đã cập nhật Toast) ---
 const ReviewForm = ({ productId, onReviewSubmitted }: { productId: number; onReviewSubmitted: () => void }) => {
   const [rating, setRating] = useState(0);
   const [comment, setComment] = useState('');
-  const [error, setError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [hoverRating, setHoverRating] = useState(0);
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
   const router = useRouter();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (rating === 0) {
-      setError('Vui lòng chọn số sao đánh giá.');
+      toast.error('Vui lòng chọn số sao đánh giá.');
       return;
     }
     
     setIsSubmitting(true);
-    setError('');
+    const toastId = toast.loading('Đang gửi đánh giá...');
 
     try {
       const res = await authFetch('/api/reviews', {
@@ -83,32 +78,29 @@ const ReviewForm = ({ productId, onReviewSubmitted }: { productId: number; onRev
         }),
       }, router);
 
-      if (!res) return; // authFetch đã xử lý 401
+      if (!res) return; // authFetch xử lý 401
 
       if (!res.ok) {
         const errorData = await res.json();
         throw new Error(errorData.message || 'Gửi đánh giá thất bại.');
       }
 
-      // Thành công!
-      alert('Cảm ơn bạn đã đánh giá sản phẩm!');
+      toast.success('Cảm ơn bạn đã đánh giá sản phẩm!', { id: toastId });
       setRating(0);
       setComment('');
-      onReviewSubmitted(); // Gọi hàm callback để tải lại danh sách đánh giá
+      onReviewSubmitted();
 
     } catch (err: unknown) {
-      if ((err as Error).message !== 'Unauthorized') {
-        setError((err as Error).message);
+      const msg = (err as Error).message;
+      if (msg !== 'Unauthorized') {
+        toast.error(msg, { id: toastId });
+      } else {
+        toast.dismiss(toastId);
       }
     } finally {
       setIsSubmitting(false);
     }
   };
-  useEffect(() => {
-    // Chỉ chạy trên trình duyệt
-    const token = localStorage.getItem('accessToken');
-    setIsLoggedIn(!!token);
-  }, []);
 
   return (
     <div className="mb-8 p-6 bg-gray-50 rounded-lg shadow-sm">
@@ -124,7 +116,7 @@ const ReviewForm = ({ productId, onReviewSubmitted }: { productId: number; onRev
                 onClick={() => setRating(star)}
                 onMouseEnter={() => setHoverRating(star)}
                 onMouseLeave={() => setHoverRating(0)}
-                className="focus:outline-none"
+                className="focus:outline-none transition-transform hover:scale-110"
               >
                 <Image
                   src={starIcon}
@@ -148,18 +140,15 @@ const ReviewForm = ({ productId, onReviewSubmitted }: { productId: number; onRev
             value={comment}
             onChange={(e) => setComment(e.target.value)}
             rows={4}
-            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-lime-500 focus:ring-lime-500"
+            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-lime-500 focus:ring-lime-500 p-2"
             placeholder="Chia sẻ cảm nhận của bạn về sản phẩm..."
           />
         </div>
-
-        {error && <p className="text-sm text-red-500">{error}</p>}
-
         <div>
           <button
             type="submit"
             disabled={isSubmitting || rating === 0}
-            className="bg-lime-600 text-white py-2 px-5 rounded-full font-semibold hover:bg-lime-700 disabled:opacity-50"
+            className="bg-lime-600 text-white py-2 px-5 rounded-full font-semibold hover:bg-lime-700 disabled:opacity-50 transition-colors"
           >
             {isSubmitting ? 'Đang gửi...' : 'Gửi đánh giá'}
           </button>
@@ -168,8 +157,6 @@ const ReviewForm = ({ productId, onReviewSubmitted }: { productId: number; onRev
     </div>
   );
 };
-// --- END: Component Form Đánh giá ---
-
 
 const ProductNestedDetailPage = () => {
   const [product, setProduct] = useState<Product | null>(null);
@@ -177,19 +164,24 @@ const ProductNestedDetailPage = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [quantity, setQuantity] = useState(1);
   const [selectedSize, setSelectedSize] = useState<string | null>(null);
-  const [addToCartMessage, setAddToCartMessage] = useState('');
   const [mainImage, setMainImage] = useState<string | null>(null);
   const [reviewStats, setReviewStats] = useState({ averageRating: 0, totalReviews: 0 });
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+
   const params = useParams();
   const router = useRouter();
+  // Lấy store để cập nhật giỏ hàng
+  const { fetchCartCount } = useCartStore();
 
   const { id } = params as { category: string, id: string };
   const productId = Number(id);
 
-  const getToken = () => typeof window !== 'undefined' ? localStorage.getItem('accessToken') : null;
-  const isLoggedIn = !!getToken(); // <-- Thêm biến kiểm tra đăng nhập
+  useEffect(() => {
+    const token = typeof window !== 'undefined' ? localStorage.getItem('accessToken') : null;
+    setIsLoggedIn(!!token);
+  }, []);
 
-    useEffect(() => {
+  useEffect(() => {
     if (isNaN(productId)) {
         setIsLoading(false);
         setProduct(null); 
@@ -201,59 +193,40 @@ const ProductNestedDetailPage = () => {
       setProduct(null); 
       setMainImage(null); 
       try {
-        const token = getToken();
         const url = `/api/products/${productId}`;
-        const headers: HeadersInit = { 'Content-Type': 'application/json' };
-
-        const res = await fetch(url, { headers }); 
-
+        const res = await fetch(url); 
         if (!res.ok) {
-            if (res.status === 404) {
-                return;
-            }
-            throw new Error(`Error: ${res.status} ${res.statusText}`);
+            if (res.status === 404) return;
+            throw new Error(`Error: ${res.status}`);
         }
-
         const data = await res.json();
         setProduct(data);
-
-        if (data.imageUrl) {
-            setMainImage(data.imageUrl);
-        } else {
-            setMainImage('https://placehold.co/600x400/EEE/31343C?text=No+Image');
-        }
-
+        setMainImage(data.imageUrl || 'https://placehold.co/600x400/EEE/31343C?text=No+Image');
       } catch (error) {
         console.error('Fetch error:', error);
       } finally {
         setIsLoading(false);
       }
     }
-
     fetchProduct();
   }, [productId]); 
 
-
-  // Logic Thêm vào Giỏ Hàng (giữ nguyên)
+  // Logic Thêm vào Giỏ Hàng
   const handleAddToCart = useCallback(async () => {
     if (!product || quantity <= 0) return;
     if (!selectedSize) {
-      setAddToCartMessage('Vui lòng chọn Kích thước.');
-      setTimeout(() => setAddToCartMessage(''), 2000); // Clear message after 2s
+      toast.error('Vui lòng chọn Kích thước.');
       return;
     }
 
     const token = localStorage.getItem('accessToken');
     if (!token) {
-      setAddToCartMessage('Vui lòng đăng nhập để thêm vào giỏ hàng.');
-      setTimeout(() => { // Give time to read message before redirect
-        setAddToCartMessage('');
-        router.push('/login');
-      }, 1500);
+      toast.error('Vui lòng đăng nhập để mua hàng.');
+      setTimeout(() => router.push('/login'), 1500);
       return;
     }
 
-    setAddToCartMessage('Đang thêm...');
+    const loadingToast = toast.loading('Đang thêm vào giỏ...');
 
     try {
       const response = await authFetch(
@@ -265,92 +238,76 @@ const ProductNestedDetailPage = () => {
             quantity: quantity,
           }),
         },
-        router // Pass router
+        router
       );
 
       if(response) { 
-          setAddToCartMessage(`Đã thêm ${quantity} sản phẩm ${selectedSize ? `(Size: ${selectedSize})` : ''} vào giỏ hàng!`);
-          setTimeout(() => setAddToCartMessage(''), 2000);
+          toast.success(`Đã thêm ${quantity} sản phẩm vào giỏ!`, { id: loadingToast });
+          // Cập nhật số lượng trên Header ngay lập tức
+          fetchCartCount(router);
       }
 
     } catch (error: unknown) {
       const errorMessage = (error as Error).message;
       if (errorMessage !== 'Unauthorized') { 
-        setAddToCartMessage(`Lỗi: ${errorMessage}`);
-        setTimeout(() => setAddToCartMessage(''), 3000); 
+        toast.error(`Lỗi: ${errorMessage}`, { id: loadingToast });
       } else {
-         setAddToCartMessage(''); 
+        toast.dismiss(loadingToast);
       }
     }
-  }, [product, quantity, router, selectedSize]);
+  }, [product, quantity, router, selectedSize, fetchCartCount]);
 
-// --- START: Hàm fetch reviews (tách riêng) ---
- const fetchReviews = useCallback(async () => {
+  // Fetch Reviews
+  const fetchReviews = useCallback(async () => {
     if (isNaN(productId)) return; 
-
     try {
-      // 1. Lấy danh sách review
       const resReviews = await fetch(`/api/reviews/product/${productId}`);
-      if (!resReviews.ok) throw new Error('Không thể tải đánh giá');
-      const dataReviews = await resReviews.json();
-      setReviews(dataReviews);
+      if (resReviews.ok) setReviews(await resReviews.json());
 
-      // 2. 🌟 Lấy thống kê review (API mới)
       const resStats = await fetch(`/api/reviews/stats/${productId}`);
-      if (resStats.ok) {
-          const dataStats = await resStats.json();
-          setReviewStats(dataStats);
-      }
+      if (resStats.ok) setReviewStats(await resStats.json());
 
     } catch (error) {
       console.error('Fetch reviews error:', error);
-      setReviews([]); 
     }
   }, [productId]);
 
-  // useEffect để fetch reviews (chỉ chạy 1 lần)
   useEffect(() => {
     fetchReviews();
-  }, [fetchReviews]); // <-- Sử dụng hàm fetchReviews
+  }, [fetchReviews]);
 
-  // Logic Mua ngay (giữ nguyên)
   const handleBuyNow = useCallback(() => {
     if (!product) return;
     if (!selectedSize) {
-      setAddToCartMessage('Vui lòng chọn Kích thước.');
-       setTimeout(() => setAddToCartMessage(''), 2000);
+      toast.error('Vui lòng chọn Kích thước.');
       return;
     }
-
     const token = localStorage.getItem('accessToken');
     if (!token) {
-      router.push('/login?redirect=/checkout?productId=' + product.id + '&quantity=' + quantity + '&size=' + selectedSize); // Redirect with target
+      router.push(`/login?redirect=/checkout?productId=${product.id}&quantity=${quantity}`);
       return;
     }
-    router.push(`/checkout?productId=${product.id}&quantity=${quantity}&size=${selectedSize}`);
+    router.push(`/checkout?productId=${product.id}&quantity=${quantity}`);
   }, [product, quantity, selectedSize, router]);
 
 
-  // Hàm xử lý tăng/giảm số lượng (giữ nguyên)
   const handleQuantityChange = (type: 'increment' | 'decrement') => { 
     const newQuantity = type === 'increment' ? quantity + 1 : quantity - 1;
-    if (newQuantity >= 1 && newQuantity <= (product?.stock ?? 1)) {
+    const stock = product?.stock ?? 1;
+    if (newQuantity >= 1 && newQuantity <= stock) {
       setQuantity(newQuantity);
     }
   }; 
 
-  // --- Render UI ---
-
   if (isLoading) {
-    return <div className="min-h-screen flex items-center justify-center">Đang tải chi tiết sản phẩm...</div>;
+    return <div className="min-h-screen flex items-center justify-center text-gray-500">Đang tải chi tiết sản phẩm...</div>;
   }
 
   if (!product) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center text-center px-4">
         <h1 className="text-3xl font-bold mb-4">404 - Không tìm thấy Sản phẩm.</h1>
-        <p className="text-gray-600">Sản phẩm bạn đang tìm kiếm không tồn tại hoặc đã bị xóa.</p>
-        <button onClick={() => router.back()} className="mt-6 bg-lime-600 text-white px-6 py-2 rounded hover:bg-lime-700">
+        <button onClick={() => router.back()} className="mt-4 bg-lime-600 text-white px-6 py-2 rounded hover:bg-lime-700">
             Quay lại
         </button>
       </div>
@@ -363,71 +320,55 @@ const ProductNestedDetailPage = () => {
   return (
     <div className="container mx-auto px-4 py-12 min-h-screen">
       <div className="flex flex-col lg:flex-row gap-12">
-        {/* Cột Ảnh (giữ nguyên) */}
+        {/* Cột Ảnh */}
         <div className="lg:w-1/2">
-            {/* Ảnh Chính */}
-            <div className="relative h-96 md:h-[500px] overflow-hidden mb-4 bg-gray-100 rounded">
-                {mainImage ? (
+            <div className="relative h-96 md:h-[500px] overflow-hidden mb-4 bg-gray-100 rounded-lg shadow-sm">
+                {mainImage && (
                     <Image
                         src={mainImage}
                         alt={product.name}
                         fill
                         sizes="(max-width: 1024px) 100vw, 50vw"
-                        className="object-contain transition-opacity duration-300"
+                        className="object-contain p-4"
                         priority
-                        onError={() => setMainImage('https://placehold.co/600x400/EEE/31343C?text=Image+Error')}
                     />
-                ) : (
-                    <div className="flex items-center justify-center h-full text-gray-500">Loading image...</div>
                 )}
             </div>
-
-            {/* Ảnh nhỏ Gallery */}
-            <div className="flex justify-start gap-2 overflow-x-auto pb-2">
+            <div className="flex justify-start gap-2 overflow-x-auto pb-2 scrollbar-hide">
                 {[product.imageUrl, ...GALLERY_IMAGES.filter(src => src !== product.imageUrl)]
-                 .filter((src): src is string => typeof src === 'string' && src.trim() !== '') 
+                 .filter((src): src is string => !!src) 
                  .map((src, index) => (
                     <div
                         key={index}
                         onClick={() => setMainImage(src)}
                         className={`
-                            relative w-20 h-20 min-w-[80px] cursor-pointer border-2 rounded-md overflow-hidden transition-all duration-200 bg-gray-100
-                            ${mainImage === src ? 'border-lime-600' : 'border-gray-200 hover:border-gray-400'}
+                            relative w-20 h-20 min-w-[80px] cursor-pointer border-2 rounded-md overflow-hidden transition-all duration-200 bg-gray-50
+                            ${mainImage === src ? 'border-lime-600 ring-2 ring-lime-100' : 'border-gray-200 hover:border-gray-400'}
                         `}
                     >
-                        <Image
-                            src={src}
-                            alt={`${product.name} thumbnail ${index + 1}`}
-                            fill
-                            sizes="80px"
-                            className="object-cover"
-                             onError={(e) => (e.currentTarget.style.display = 'none')} 
-                        />
+                        <Image src={src} alt={`thumb-${index}`} fill className="object-cover" />
                     </div>
                 ))}
             </div>
         </div>
 
-        {/* Cột Thông tin chi tiết (giữ nguyên) */}
+        {/* Cột Thông tin */}
         <div className="lg:w-1/2">
-          <h1 className="text-4xl font-bold text-gray-900  mb-4">{product.name}</h1>
-          <p className="text-3xl font-extrabold text-lime-600 mb-6">
-            {formatPrice(product.price)}
-          </p>
+          <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">{product.name}</h1>
+          <p className="text-3xl font-extrabold text-lime-600 mb-6">{formatPrice(product.price)}</p>
 
-          {/* Form chọn Kích thước */}
           <div className="mb-6">
-            <h2 className="text-xl font-semibold mb-2 text-gray-900 dark:text-white">Kích Thước</h2>
+            <h2 className="text-lg font-semibold mb-2 text-gray-900">Kích Thước</h2>
             <div className="flex flex-wrap gap-2">
               {AVAILABLE_SIZES.map((size) => (
                 <button
                   key={size}
                   onClick={() => setSelectedSize(size)}
                   className={`
-                    px-4 py-2 border rounded-md text-sm font-medium transition-colors
+                    px-4 py-2 border rounded-md text-sm font-medium transition-all
                     ${selectedSize === size
-                      ? 'bg-lime-600 border-lime-600 text-white'
-                      : 'bg-white border-gray-300 text-gray-700 hover:border-lime-500 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-300 dark:hover:border-lime-500'}
+                      ? 'bg-lime-600 border-lime-600 text-white shadow-md'
+                      : 'bg-white border-gray-300 text-gray-700 hover:border-lime-500 hover:text-lime-600'}
                     ${isOutOfStock ? 'opacity-50 cursor-not-allowed' : ''}
                   `}
                   disabled={isOutOfStock}
@@ -436,116 +377,59 @@ const ProductNestedDetailPage = () => {
                 </button>
               ))}
             </div>
-            {/* Link hướng dẫn chọn size */}
-            <div className="flex justify-end mt-3">
-              <a
-                href="#" 
-                className="flex items-center gap-1 text-sm text-lime-600 hover:underline transition-colors"
-                target="_blank" 
-                rel="noopener noreferrer"
-              >
-                <Image
-                  src="https://cdn.kiwisizing.com/customIcons/supersports-vietnam-1719475595888.png"
-                  alt="Hướng dẫn kích thước icon"
-                  width={16}
-                  height={16}
-                />
-                <span>Hướng dẫn chọn kích thước</span>
-              </a>
+            <div className="flex justify-end mt-2">
+               <a href="#" className="flex items-center gap-1 text-sm text-lime-600 hover:underline">
+                 <Image src="https://cdn.kiwisizing.com/customIcons/supersports-vietnam-1719475595888.png" alt="ruler" width={16} height={16} />
+                 Hướng dẫn chọn kích thước
+               </a>
             </div>
           </div>
 
           <div className="mb-6">
-            <h2 className="text-xl font-semibold mb-2">Mô tả sản phẩm</h2>
-            <p className="text-gray-600 dark:text-gray-400 leading-relaxed">
-              {product.description || 'Chưa có mô tả chi tiết cho sản phẩm này.'}
-            </p>
+            <h2 className="text-lg font-semibold mb-2">Mô tả</h2>
+            <p className="text-gray-600 leading-relaxed">{product.description || 'Chưa có mô tả.'}</p>
           </div>
 
           <div className="mb-6">
-            <p className={`font-semibold ${isOutOfStock ? 'text-red-500' : 'text-green-500'}`}>
-              Tình trạng: {isOutOfStock ? 'Hết hàng' : `Còn hàng (${currentStock} sản phẩm)`}
-            </p>
+             <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${isOutOfStock ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800'}`}>
+                {isOutOfStock ? 'Hết hàng' : `Còn hàng (${currentStock})`}
+             </span>
           </div>
 
-          {/* Form Số lượng và Thêm vào Giỏ hàng */}
-          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4 border-t pt-6">
-            <div className="flex items-center space-x-0 border border-gray-300 dark:border-gray-700 rounded-md">
-              <button
-                onClick={() => handleQuantityChange('decrement')}
-                disabled={isOutOfStock || quantity <= 1}
-                className="w-10 h-10 flex items-center justify-center text-xl font-bold text-gray-700 disabled:opacity-50 rounded-l-md hover:bg-gray-100"
-                aria-label="Giảm số lượng"
-              >
-                -
-              </button>
-              <input
-                type="number"
-                value={quantity}
-                min="1"
-                max={currentStock > 0 ? currentStock : 1}
+          {/* Action Buttons */}
+          <div className="flex flex-col sm:flex-row gap-4 border-t pt-6">
+             <div className="flex items-center border border-gray-300 rounded-md h-12 w-fit">
+                <button onClick={() => handleQuantityChange('decrement')} disabled={isOutOfStock || quantity <= 1} className="px-4 text-xl text-gray-600 hover:bg-gray-100 h-full disabled:opacity-50">-</button>
+                <input 
+                    type="number" 
+                    value={quantity} 
+                    readOnly 
+                    className="w-12 text-center border-x border-gray-300 h-full focus:outline-none" 
+                />
+                <button onClick={() => handleQuantityChange('increment')} disabled={isOutOfStock || quantity >= currentStock} className="px-4 text-xl text-gray-600 hover:bg-gray-100 h-full disabled:opacity-50">+</button>
+             </div>
+             
+             <button
+                onClick={handleBuyNow}
                 disabled={isOutOfStock}
-                 onChange={(e) => {
-                    const value = parseInt(e.target.value, 10);
-                    const maxStock = product?.stock ?? 0;
-                    if (isNaN(value) || value < 1) {
-                        setQuantity(1);
-                    } else if (value > maxStock && maxStock > 0) {
-                        setQuantity(maxStock);
-                    } else {
-                        setQuantity(value);
-                    }
-                }}
-                className="w-16 h-10 text-center border-y border-gray-300 dark:border-gray-700 focus:outline-none focus:ring-1 focus:ring-lime-500 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                 aria-label="Số lượng sản phẩm"
-                />
-              <button
-                onClick={() => handleQuantityChange('increment')}
-                disabled={isOutOfStock || quantity >= currentStock}
-                className="w-10 h-10 flex items-center justify-center text-xl font-bold text-gray-700 disabled:opacity-50 rounded-r-md hover:bg-gray-100"
-                 aria-label="Tăng số lượng"
-              >
-                +
-              </button>
-            </div>
-            <div className='flex-1 flex flex-col sm:flex-row gap-4'>
-                <button
-                  disabled={isOutOfStock || !selectedSize}
-                  className="flex-1 bg-[#001A2D] text-white py-3 px-6 rounded-full font-semibold hover:bg-gray-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                  onClick={handleBuyNow}
-                >
-                  MUA NGAY
-                </button>
-                <button
-                  onClick={handleAddToCart}
-                  disabled={isOutOfStock || !selectedSize}
-                  className="flex-1 border border-lime-600 text-lime-600 py-3 px-6 rounded-full font-semibold hover:bg-lime-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  THÊM VÀO GIỎ HÀNG
-                </button>
-            </div>
-          </div>
-
-          {addToCartMessage && (
-            <p className={`mt-4 text-sm font-medium ${addToCartMessage.startsWith('Lỗi') || addToCartMessage.includes('Vui lòng') ? 'text-red-500' : 'text-green-500'}`}>
-              {addToCartMessage}
-            </p>
-          )}
-
-          {/* Vận chuyển và ưu đãi (giữ nguyên) */}
-          <div className='mt-6 text-sm space-y-3 border-t pt-6'>
-              <p>📦 Miễn phí giao hàng đơn từ 699k <a href="#" className='text-lime-600 hover:underline cursor-pointer'>Xem chi tiết</a></p>
-              <p>🔄 Đổi trả miễn phí đến 30 ngày <a href="#" className='text-lime-600 hover:underline cursor-pointer'>Xem chi tiết</a></p>
-              <p>💳 Trả góp 0% lãi suất từ 3.000.000 VNĐ <a href="#" className='text-lime-600 hover:underline cursor-pointer'>Xem chi tiết</a></p>
-              <p>✅ Thanh toán trực tuyến nhanh chóng và an toàn.</p>
-              <p>💯 Sản phẩm chính hãng 100%.</p>
+                className="flex-1 bg-[#001A2D] text-white h-12 rounded-full font-bold hover:bg-gray-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-md"
+             >
+                MUA NGAY
+             </button>
+             <button
+                onClick={handleAddToCart}
+                disabled={isOutOfStock}
+                className="flex-1 border-2 border-lime-600 text-lime-600 h-12 rounded-full font-bold hover:bg-lime-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+             >
+                THÊM VÀO GIỎ
+             </button>
           </div>
         </div>
       </div>
 
-      {/* --- START: Phần đánh giá sản phẩm (CẬP NHẬT) --- */}
-      <div className="mt-12 border-t pt-10">
-        <div className="flex items-center gap-4 mb-6">
+      {/* Reviews Section */}
+      <div className="mt-16 border-t pt-10">
+        <div className="flex items-center gap-4 mb-8">
             <h2 className="text-2xl font-bold">Đánh giá sản phẩm</h2>
             {reviewStats.totalReviews > 0 && (
                 <div className="flex items-center bg-lime-50 px-3 py-1 rounded-full border border-lime-200">
@@ -556,34 +440,49 @@ const ProductNestedDetailPage = () => {
             )}
         </div>
 
-        {/* Form để lại đánh giá */}
-        {/* Biến isLoggedIn giờ là state, sẽ cập nhật đúng khi trang tải xong */}
-        {isLoggedIn ? (
-          <ReviewForm productId={productId} onReviewSubmitted={fetchReviews} />
-        ) : (
-          <div className="mb-8 p-6 bg-gray-50 rounded-lg text-center border border-gray-200">
-            <p className="text-gray-600">
-              Vui lòng <Link href={`/login?redirect=/products/${params.category}/${productId}`} className="text-lime-600 font-semibold hover:underline">đăng nhập</Link> để để lại đánh giá.
-            </p>
-          </div>
-        )}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            {/* Form */}
+            <div className="lg:col-span-1">
+                {isLoggedIn ? (
+                    <ReviewForm productId={productId} onReviewSubmitted={fetchReviews} />
+                ) : (
+                    <div className="p-6 bg-gray-50 rounded-lg border border-gray-200 text-center">
+                        <p className="text-gray-600 mb-4">Bạn cần đăng nhập để đánh giá sản phẩm này.</p>
+                        <Link href={`/login?redirect=/products/${params.category}/${productId}`} className="inline-block bg-white border border-gray-300 text-gray-700 px-4 py-2 rounded-md hover:bg-gray-50 font-medium">
+                            Đăng nhập ngay
+                        </Link>
+                    </div>
+                )}
+            </div>
 
-        {/* Danh sách các đánh giá */}
-        <div className="space-y-6">
-          {reviews.length > 0 ? (
-            reviews.map((review) => (
-              <div key={review.id} className="border-b pb-4">
-                <div className="flex items-center mb-2">
-                  <StarRating rating={review.rating} />
-                  <p className="ml-4 font-bold">{review.user?.name || 'Người dùng ẩn danh'}</p>
-                </div>
-                {review.comment && <p className="text-gray-600">{review.comment}</p>}
-                <p className="text-xs text-gray-400 mt-2">{new Date(review.createdAt).toLocaleDateString('vi-VN')}</p>
-              </div>
-            ))
-          ) : (
-            <p className="text-gray-500 italic">Chưa có đánh giá nào cho sản phẩm này.</p>
-          )}
+            {/* List */}
+            <div className="lg:col-span-2 space-y-6">
+                {reviews.length > 0 ? (
+                    reviews.map((review) => (
+                        <div key={review.id} className="border-b pb-6 last:border-0">
+                            <div className="flex items-center justify-between mb-2">
+                                <div className="flex items-center gap-3">
+                                    <div className="w-10 h-10 bg-gray-200 rounded-full flex items-center justify-center text-gray-500 font-bold">
+                                        {review.user?.name?.charAt(0).toUpperCase() || 'U'}
+                                    </div>
+                                    <div>
+                                        <p className="font-bold text-gray-900">{review.user?.name || 'Người dùng ẩn danh'}</p>
+                                        <div className="flex items-center">
+                                            <StarRating rating={review.rating} />
+                                        </div>
+                                    </div>
+                                </div>
+                                <span className="text-xs text-gray-400">{new Date(review.createdAt).toLocaleDateString('vi-VN')}</span>
+                            </div>
+                            <p className="text-gray-700 mt-2 bg-gray-50 p-3 rounded-lg">{review.comment}</p>
+                        </div>
+                    ))
+                ) : (
+                    <div className="text-center py-10 bg-gray-50 rounded-lg border border-dashed border-gray-300">
+                        <p className="text-gray-500">Chưa có đánh giá nào. Hãy là người đầu tiên!</p>
+                    </div>
+                )}
+            </div>
         </div>
       </div>
     </div>

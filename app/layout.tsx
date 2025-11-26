@@ -5,7 +5,7 @@ import "./globals.css";
 import Header from "./components/layout/Header";
 import Footer from "./components/layout/Footer";
 import AuthWrapper from "./components/AuthWrapper"; // <-- 1. Import AuthWrapper
-
+import { Toaster } from 'react-hot-toast';
 const nunito = Nunito_Sans({
   variable: "--font-nunito",
   subsets: ["latin"],
@@ -33,6 +33,7 @@ export default function RootLayout({
           <main className="min-h-screen">{children}</main>
           {modal}
           <Footer />
+          <Toaster position="top-center" />
         </AuthWrapper>
       </body>
     </html>

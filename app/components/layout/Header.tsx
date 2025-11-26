@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation'; // Import useRouter
 import Search from '../ui/Search';
-
+import { useCartStore } from '@/app/store/useCartStore';
 const announcementMessages = [
   "Miễn phí vận chuyển cho đơn hàng trên 500k!",
   "Giảm giá 30% cho bộ sưu tập Hè mới nhất",
@@ -16,7 +16,7 @@ const Header = () => {
   const [currentMessageIndex, setCurrentMessageIndex] = useState(0);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const router = useRouter(); // Khởi tạo router
-
+  const { totalItems, fetchCartCount } = useCartStore();
   // Kiểm tra trạng thái đăng nhập khi component được tải
   useEffect(() => {
     const token = localStorage.getItem('accessToken');
@@ -24,6 +24,12 @@ const Header = () => {
       setIsLoggedIn(true);
     }
   }, []);
+
+  useEffect(() => {
+    if (isLoggedIn) {
+      fetchCartCount(router);
+    }
+  }, [isLoggedIn, router, fetchCartCount]);
 
   // Chạy hiệu ứng cho thanh thông báo
   useEffect(() => {
@@ -95,8 +101,14 @@ const Header = () => {
               </svg>
             </Link>
           )}
-          <Link href="/cart" className="text-white hover:opacity-80">
+          <Link href="/cart" className="text-white hover:opacity-80 relative">
             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" x2="21" y1="6" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
+            {/* Badge hiển thị số lượng */}
+            {totalItems > 0 && (
+              <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center">
+                {totalItems}
+              </span>
+            )}
           </Link>
 
           {/* Hiển thị nút Đăng xuất hoặc Đăng nhập */}

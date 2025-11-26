@@ -3,11 +3,11 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import toast from 'react-hot-toast'; 
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
 
@@ -20,7 +20,10 @@ export default function LoginPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
-    setError('');
+
+
+    // 1. Hiện loading toast
+    const loadingToast = toast.loading('Đang đăng nhập...');
 
     try {
       const response = await fetch('/api/auth/login', {
@@ -36,10 +39,18 @@ export default function LoginPage() {
 
       const data = await response.json();
       localStorage.setItem('accessToken', data.access_token);
-      router.push('/'); // Chuyển về trang chủ sau khi đăng nhập thành công
+      
+      // 2. Tắt loading và hiện success toast
+      toast.dismiss(loadingToast);
+      toast.success('Đăng nhập thành công!');
+      
+      router.push('/'); 
       
     } catch (err: unknown) {
-      setError((err as Error).message);
+      // 3. Tắt loading và hiện error toast
+      toast.dismiss(loadingToast);
+      toast.error((err as Error).message || 'Có lỗi xảy ra');
+      // setError((err as Error).message);
     } finally {
       setIsLoading(false);
     }
@@ -87,7 +98,8 @@ export default function LoginPage() {
             </div>
           </div>
 
-          {error && <p className="text-sm text-red-500 text-center">{error}</p>}
+          {/* Đã xóa phần hiển thị lỗi cũ (thẻ p màu đỏ) vì giờ lỗi sẽ hiện qua Toast */}
+          {/* {error && <p className="text-sm text-red-500 text-center">{error}</p>} */}
 
           <div>
             <button

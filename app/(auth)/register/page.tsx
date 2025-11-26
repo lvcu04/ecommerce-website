@@ -3,21 +3,21 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import toast from 'react-hot-toast';
 
 export default function RegisterPage() {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
+  // Bỏ state error/success cũ vì dùng toast
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
-    setError('');
-    setSuccess('');
+
+    const loadingToast = toast.loading('Đang tạo tài khoản...');
 
     try {
       const response = await fetch('/api/auth/register', {
@@ -31,13 +31,16 @@ export default function RegisterPage() {
         throw new Error(errorData.message || 'Đăng ký thất bại.');
       }
 
-      setSuccess('Đăng ký thành công! Chuyển đến trang đăng nhập...');
+      toast.dismiss(loadingToast);
+      toast.success('Đăng ký thành công! Đang chuyển hướng...');
+      
       setTimeout(() => {
         router.push('/login');
-      }, 2000);
+      }, 1500);
 
     }catch (err: unknown) {
-      setError((err as Error).message);
+      toast.dismiss(loadingToast);
+      toast.error((err as Error).message || 'Có lỗi xảy ra');
     } finally {
       setIsLoading(false);
     }
@@ -97,9 +100,6 @@ export default function RegisterPage() {
               />
             </div>
           </div>
-
-          {error && <p className="text-sm text-center text-red-500">{error}</p>}
-          {success && <p className="text-sm text-center text-green-500">{success}</p>}
 
           <div>
             <button

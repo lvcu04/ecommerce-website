@@ -42,7 +42,6 @@ services:
       sh -c "npm rebuild bcrypt --build-from-source && 
              npx prisma migrate deploy &&
              npx prisma generate &&
-             npx prisma db seed &&
              npm run start:dev"
     environment:
       - SERVER_ID=Web-Server-1
