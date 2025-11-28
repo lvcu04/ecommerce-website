@@ -2,7 +2,7 @@ import { Swiper, SwiperSlide } from "swiper/react";
 import { Autoplay, Pagination } from "swiper/modules";
 import "swiper/css";
 import "swiper/css/pagination";
-
+import Image from "next/image";
 const Banner = () => {
   const images = [
     "//supersports.com.vn/cdn/shop/files/1545_500_V_e2db2088-4927-407b-8c0f-94026f6b7d3e.jpg?v=1759390870&width=2400",
@@ -21,10 +21,13 @@ const Banner = () => {
       {images.map((src, i) => (
         <SwiperSlide key={i}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={src}
-            alt=""
-            className="w-full h-full object-cover"
+          <Image
+            src={`https:${src}`} // Thêm https: nếu link bắt đầu bằng //
+            alt="Banner"
+            fill
+            priority={i === 0} // Load ảnh đầu tiên ngay lập tức
+            className="object-cover"
+            sizes="100vw"
           />
         </SwiperSlide>
       ))}

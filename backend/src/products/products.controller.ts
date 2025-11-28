@@ -13,8 +13,26 @@ export class ProductsController {
   
   // Cho phép mọi người xem danh sách sản phẩm (không cần Auth)
   @Get()
-  findAll(@Query('page') page = '1', @Query('category') category?: string, @Query('search') search?: string) { 
-    return this.productsService.findAll(Number(page), 12, category , search); 
+  findAll(
+    @Query('page') page = '1', 
+    @Query('pageSize') pageSize = '12', // Thêm pageSize để linh động (mặc định 12 cho User)
+    @Query('category') category?: string, 
+    @Query('search') search?: string,
+    
+    // --- CÁC THAM SỐ MỚI ---
+    @Query('sort') sort?: string,           // ví dụ: 'price_asc', 'newest'
+    @Query('minPrice') minPrice?: string,   // Query gửi lên là string, cần ép kiểu
+    @Query('maxPrice') maxPrice?: string,
+  ) { 
+    return this.productsService.findAll(
+      Number(page), 
+      Number(pageSize), 
+      category, 
+      search,
+      sort,                 // Truyền sort xuống service
+      minPrice ? Number(minPrice) : undefined, // Ép kiểu sang number
+      maxPrice ? Number(maxPrice) : undefined  // Ép kiểu sang number
+    ); 
   }
   
   // Xóa Guard để cho phép mọi người xem chi tiết sản phẩm (GET /products/:id)
