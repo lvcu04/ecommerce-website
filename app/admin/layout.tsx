@@ -85,6 +85,7 @@ export default function AdminLayout({
           <Link href="/admin" className="hover:bg-gray-700 p-2 rounded transition-colors">Dashboard</Link>
           <Link href="/admin/products" className="hover:bg-gray-700 p-2 rounded transition-colors">Quản lý Sản phẩm</Link>
           <Link href="/admin/orders" className="hover:bg-gray-700 p-2 rounded transition-colors">Quản lý Đơn hàng</Link>
+          <Link href="/admin/categories" className="hover:bg-gray-700 p-2 rounded transition-colors">Quản lý Danh mục</Link>
           {/* Thêm các link quản lý khác ở đây */}
         </nav>
         <div className="mt-auto pt-4 border-t border-gray-700"> {/* Thêm border top */}

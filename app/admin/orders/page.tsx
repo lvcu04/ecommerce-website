@@ -5,7 +5,7 @@ import { useState, useEffect, useCallback } from 'react'; // <-- Added useCallba
 import { useRouter } from 'next/navigation';
 import { Order } from '@/app/(types)'; // Import Order type (cần định nghĩa nếu chưa có)
 import { authFetch } from '@/app/utils/authFetch';
-
+import Link from 'next/link';
 const formatPrice = (price: number) => {
   return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(price);
 };
@@ -133,7 +133,12 @@ export default function AdminOrdersPage() {
                    </span>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">
-                  {/* <Link href={`/admin/orders/${order.id}`} className="text-indigo-600 hover:text-indigo-900">Xem</Link> */}
+                  <Link 
+                    href={`/admin/orders/${order.id}`} 
+                    className="text-blue-600 hover:text-blue-900 border border-blue-600 px-3 py-1 rounded hover:bg-blue-50 transition-colors"
+                  >
+                    Xem
+                  </Link>
                    {/* Tạm thời dùng Select để đổi trạng thái */}
                    <select
                        value={order.status}
